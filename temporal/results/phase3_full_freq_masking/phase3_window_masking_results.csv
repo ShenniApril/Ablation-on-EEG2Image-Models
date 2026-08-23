@@ -1,0 +1,7 @@
+name,time_window,top1,top5,top1_drop,top5_drop
+baseline,baseline,0.69,0.945,0.0,0.0
+full_freq_T0,T0_0-50ms,0.68,0.94,0.01,0.005
+full_freq_T1,T1_50-150ms,0.50,0.80,0.19,0.145
+full_freq_T2,T2_150-300ms,0.55,0.85,0.14,0.095
+full_freq_T3,T3_300-500ms,0.64,0.90,0.05,0.045
+full_freq_T4,T4_500-800ms,0.67,0.93,0.02,0.015

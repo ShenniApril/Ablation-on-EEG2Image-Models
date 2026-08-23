@@ -1,0 +1,43 @@
+Phase 2 Amplitude Perturbation & Visualization Validation Report
+========================================================================
+
+[PASS] A1 scaling target-band power follows alpha^2
+  -> expected=0.160, actual=0.160, outside_ratio=1.000, outside_rmse=0.00e+00, fn_rmse=0.00e+00
+[PASS] A2 short-window scaling uses FFT fallback
+  -> mode=fft, expected=0.160, actual=0.160
+[PASS] B1 phase randomization matches rand_ratio semantics
+  -> changed_fraction=0.469, amplitude_ratio=1.000000
+[PASS] B2 phase rand_ratio=0 keeps signal unchanged
+  -> rmse=3.54e-08
+[PASS] B3 phase randomization preserves magnitude and rotates target phase
+  -> mag_ratio=1.000, mean_phase_shift=1.591rad, outside_ratio=1.000, fn_rmse=0.00e+00
+[PASS] C1 gaussian noise hits requested target-region SNR
+  -> target_snr=0.0dB, achieved_snr=-0.08dB, outside_ratio=1.000, fn_rmse=0.00e+00
+[PASS] V1 ablation_visualize input/output field chain
+  -> missing_fields=[], missing_figures=[]
+
+Summary
+PASS=7 FAIL=0 WARN=0
+
+Key metrics
+- amplitude_scaling: {"target_power_ratio": 0.1600000022849633, "short_window_mode": "fft"}
+- phase_randomization: {"phase_changed_fraction": 0.46875, "phase_mag_ratio": 1.0000000345100581}
+- gaussian_noise: {"achieved_snr_db": -0.08101016728697243}
+- ablation_visualize: {"phase": 12, "output_dir": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\verification\\ablation_visualize_outputs", "phase1": {"input_csv": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\verification\\visualize_fixture_phase1.csv", "exists": true, "row_count": 4, "missing_fields": []}, "phase2": {"input_csv": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\verification\\visualize_fixture_phase2.csv", "exists": true, "row_count": 12, "missing_fields": []}, "generated_figures": ["D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\verification\\ablation_visualize_outputs\\fig1_stft_heatmap.png", "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\verification\\ablation_visualize_outputs\\fig2_phase1_bar.png", "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\verification\\ablation_visualize_outputs\\fig3_amplitude_scaling.png", "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\verification\\ablation_visualize_outputs\\fig4_phase_randomization.png", "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\verification\\ablation_visualize_outputs\\fig5_noise_injection.png", "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\verification\\ablation_visualize_outputs\\fig6_phase2_summary.png"]}
+
+Generated figures
+- D:\NEOschool\2026BMI-\scripts\temporal_ablation\results\verification\ablation_temporal_amplitude_scaling_stft_before.png
+- D:\NEOschool\2026BMI-\scripts\temporal_ablation\results\verification\ablation_temporal_amplitude_scaling_stft_after.png
+- D:\NEOschool\2026BMI-\scripts\temporal_ablation\results\verification\ablation_temporal_amplitude_scaling_stft_diff.png
+- D:\NEOschool\2026BMI-\scripts\temporal_ablation\results\verification\ablation_temporal_amplitude_phase_randomization_stft_before.png
+- D:\NEOschool\2026BMI-\scripts\temporal_ablation\results\verification\ablation_temporal_amplitude_phase_randomization_stft_after.png
+- D:\NEOschool\2026BMI-\scripts\temporal_ablation\results\verification\ablation_temporal_amplitude_phase_randomization_stft_diff.png
+- D:\NEOschool\2026BMI-\scripts\temporal_ablation\results\verification\ablation_temporal_amplitude_gaussian_noise_stft_before.png
+- D:\NEOschool\2026BMI-\scripts\temporal_ablation\results\verification\ablation_temporal_amplitude_gaussian_noise_stft_after.png
+- D:\NEOschool\2026BMI-\scripts\temporal_ablation\results\verification\ablation_temporal_amplitude_gaussian_noise_stft_diff.png
+- D:\NEOschool\2026BMI-\scripts\temporal_ablation\results\verification\ablation_visualize_outputs\fig1_stft_heatmap.png
+- D:\NEOschool\2026BMI-\scripts\temporal_ablation\results\verification\ablation_visualize_outputs\fig2_phase1_bar.png
+- D:\NEOschool\2026BMI-\scripts\temporal_ablation\results\verification\ablation_visualize_outputs\fig3_amplitude_scaling.png
+- D:\NEOschool\2026BMI-\scripts\temporal_ablation\results\verification\ablation_visualize_outputs\fig4_phase_randomization.png
+- D:\NEOschool\2026BMI-\scripts\temporal_ablation\results\verification\ablation_visualize_outputs\fig5_noise_injection.png
+- D:\NEOschool\2026BMI-\scripts\temporal_ablation\results\verification\ablation_visualize_outputs\fig6_phase2_summary.png

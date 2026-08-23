@@ -1,0 +1,45 @@
+NeuroBridge Temporal Ablation -- Signal-Level Verification Report
+======================================================================
+
+[PASS] T1a  gamma energy removed (ratio<0.05)
+       -> gamma_orig=149.2151, abl=0.000000, ratio=0.0000
+[PASS] T1b  alpha energy intact  (ratio>0.85)
+       -> alpha_orig=61.4978, abl=61.497780, ratio=1.0000
+[PASS] T2a  region before window unchanged (RMSE<1e-5)
+       -> RMSE=0.00e+00
+[PASS] T2b  region after  window unchanged (RMSE<1e-5)
+       -> RMSE=0.00e+00
+[PASS] T3   near-null mask RMSE < 0.05
+       -> RMSE=1.30e-07
+[PASS] T4a  short-win FFT fallback: alpha removed (ratio<0.20)
+       -> ratio=0.0000
+[PASS] T4b  output shape preserved
+       -> in=(10, 17, 250), out=(10, 17, 250)
+[PASS] T5a  output == channel mean
+       -> max_diff=0.00e+00
+[PASS] T5b  AC variance < 1e-6
+       -> AC_var=7.60e-20
+[PASS] T6a  target window AC energy < 10%
+       -> AC_orig=1.0141, AC_abl=0.002064, ratio=0.0020
+[FAIL] T6b  DC preserved (|diff|<1e-4)
+       -> DC_diff=4.52e-01
+[PASS] T6c  outside window unchanged (RMSE<1e-5)
+       -> RMSE_out=0.00e+00
+[FAIL] T7a  in-box energy ratio < 0.10 (energy removed)
+       -> E_in_orig=6.1086e-02, E_in_abl=7.2939e-03, ratio=0.1194
+[PASS] T7b  out-box energy ratio > 0.85 (other region intact)
+       -> E_out_orig=5.8125e-02, E_out_abl=5.7875e-02, ratio=0.9957
+[PASS] T8   low_gamma(30-45Hz) removed (ratio<0.20)
+       -> ratio=0.0000
+[PASS] T8   gamma(45-70Hz) removed (ratio<0.20)
+       -> ratio=0.0000
+[PASS] T8   high_gamma(70-100Hz) removed (ratio<0.20)
+       -> ratio=0.0000
+
+======================================================================
+SUMMARY: 15 PASS  |  2 FAIL
+
+Generated figures:
+  D:\NEOschool\2026BMI-\scripts\temporal_ablation\results\verification\verify_stft_spectrogram_before.png
+  D:\NEOschool\2026BMI-\scripts\temporal_ablation\results\verification\verify_stft_spectrogram_after.png
+  D:\NEOschool\2026BMI-\scripts\temporal_ablation\results\verification\verify_stft_spectrogram_compare.png

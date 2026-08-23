@@ -1,0 +1,6 @@
+﻿Condition,Top1_Drop,Both_Correct,Base_Correct_Cond_Incorrect,Base_Incorrect_Cond_Correct,Both_Incorrect,p_value_raw,p_value_fdr,Significant_FDR_0.05
+full_freq_T2,0.455,43,95,4,58,1.2388827013668045e-23,6.194413506834022e-23,True
+full_freq_T1,0.265,79,59,6,56,4.964650327128616e-12,1.2411625817821539e-11,True
+full_freq_T3,0.115,109,29,6,56,0.0001168418675661087,0.00019473644594351452,True
+full_freq_T4,0.08,115,23,7,55,0.005222879350185395,0.006528599187731744,True
+full_freq_T0,-0.01,135,3,5,57,0.7265625,0.7265625,False

@@ -1,0 +1,24 @@
+{
+  "phase": 12,
+  "output_dir": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\verification\\ablation_visualize_outputs",
+  "phase1": {
+    "input_csv": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\verification\\visualize_fixture_phase1.csv",
+    "exists": true,
+    "row_count": 4,
+    "missing_fields": []
+  },
+  "phase2": {
+    "input_csv": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\verification\\visualize_fixture_phase2.csv",
+    "exists": true,
+    "row_count": 12,
+    "missing_fields": []
+  },
+  "generated_figures": [
+    "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\verification\\ablation_visualize_outputs\\fig1_stft_heatmap.png",
+    "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\verification\\ablation_visualize_outputs\\fig2_phase1_bar.png",
+    "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\verification\\ablation_visualize_outputs\\fig3_amplitude_scaling.png",
+    "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\verification\\ablation_visualize_outputs\\fig4_phase_randomization.png",
+    "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\verification\\ablation_visualize_outputs\\fig5_noise_injection.png",
+    "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\verification\\ablation_visualize_outputs\\fig6_phase2_summary.png"
+  ]
+}

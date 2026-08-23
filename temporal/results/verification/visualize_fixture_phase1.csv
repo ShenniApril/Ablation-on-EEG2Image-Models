@@ -1,0 +1,5 @@
+﻿name,time_window,freq_band,priority,top1,top5,mean_rank,median_rank,top1_drop,top5_drop
+baseline,,,control,0.4200,0.7600,4.2,3,,
+T1_50-150ms__gamma,T1_50-150ms,gamma,5,0.3100,0.6900,6.1,5,0.1100,0.0700
+T2_150-300ms__gamma,T2_150-300ms,gamma,5,0.2800,0.6500,6.8,6,0.1400,0.1100
+T2_150-300ms__beta,T2_150-300ms,beta,4,0.3300,0.7100,5.4,4,0.0900,0.0500

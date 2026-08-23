@@ -1,0 +1,13 @@
+﻿condition,perturbation,param_name,param_value,top1,top5,mean_rank,median_rank,top1_drop,top5_drop
+T2_150-300ms__gamma,scaling,alpha,0.0,0.2400,0.6000,7.4,6,0.1800,0.1600
+T2_150-300ms__gamma,scaling,alpha,1.0,0.4200,0.7600,4.2,3,0.0000,0.0000
+T2_150-300ms__gamma,phase_rand,rand_ratio,0.0,0.4200,0.7600,4.2,3,0.0000,0.0000
+T2_150-300ms__gamma,phase_rand,rand_ratio,1.0,0.3000,0.6800,6.0,5,0.1200,0.0800
+T2_150-300ms__gamma,gaussian_noise,snr_db,20.0,0.4000,0.7500,4.4,4,0.0200,0.0100
+T2_150-300ms__gamma,gaussian_noise,snr_db,-10.0,0.2500,0.6200,7.1,6,0.1700,0.1400
+T2_150-300ms__beta,scaling,alpha,0.0,0.2900,0.6800,6.3,5,0.1300,0.0800
+T2_150-300ms__beta,scaling,alpha,1.0,0.4200,0.7600,4.2,3,0.0000,0.0000
+T2_150-300ms__beta,phase_rand,rand_ratio,0.0,0.4200,0.7600,4.2,3,0.0000,0.0000
+T2_150-300ms__beta,phase_rand,rand_ratio,1.0,0.3400,0.7000,5.6,5,0.0800,0.0600
+T2_150-300ms__beta,gaussian_noise,snr_db,20.0,0.4100,0.7500,4.3,4,0.0100,0.0100
+T2_150-300ms__beta,gaussian_noise,snr_db,-10.0,0.3100,0.6600,6.2,5,0.1100,0.1000

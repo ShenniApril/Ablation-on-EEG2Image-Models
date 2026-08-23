@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Phase 2 Temporal Ablation Validation</title>
+<style>
+body { font-family: "Microsoft YaHei", "Segoe UI", sans-serif; max-width: 1100px; margin: 32px auto; padding: 0 24px; color: #1a1a1a; }
+table { border-collapse: collapse; width: 100%; margin-top: 16px; }
+th, td { border-bottom: 1px solid #e5e7eb; padding: 10px 12px; text-align: left; vertical-align: top; }
+th { background: #1d4ed8; color: white; }
+.PASS { color: #15803d; font-weight: 700; }
+.FAIL { color: #b91c1c; font-weight: 700; }
+.WARN { color: #b45309; font-weight: 700; }
+code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<h1>Phase 2 振幅扰动与可视化链路验证</h1>
+<p>脚本目录：<code>D:\NEOschool\2026BMI-\scripts\temporal_ablation</code></p>
+<p>结论：PASS=7 / FAIL=0 / WARN=0</p>
+<table>
+<tr><th>状态</th><th>检查项</th><th>细节</th></tr>
+<tr><td>PASS</td><td>A1 scaling target-band power follows alpha^2</td><td><code>expected=0.160, actual=0.160, outside_ratio=1.000, outside_rmse=0.00e+00, fn_rmse=0.00e+00</code></td></tr>
+<tr><td>PASS</td><td>A2 short-window scaling uses FFT fallback</td><td><code>mode=fft, expected=0.160, actual=0.160</code></td></tr>
+<tr><td>PASS</td><td>B1 phase randomization matches rand_ratio semantics</td><td><code>changed_fraction=0.469, amplitude_ratio=1.000000</code></td></tr>
+<tr><td>PASS</td><td>B2 phase rand_ratio=0 keeps signal unchanged</td><td><code>rmse=3.54e-08</code></td></tr>
+<tr><td>PASS</td><td>B3 phase randomization preserves magnitude and rotates target phase</td><td><code>mag_ratio=1.000, mean_phase_shift=1.591rad, outside_ratio=1.000, fn_rmse=0.00e+00</code></td></tr>
+<tr><td>PASS</td><td>C1 gaussian noise hits requested target-region SNR</td><td><code>target_snr=0.0dB, achieved_snr=-0.08dB, outside_ratio=1.000, fn_rmse=0.00e+00</code></td></tr>
+<tr><td>PASS</td><td>V1 ablation_visualize input/output field chain</td><td><code>missing_fields=[], missing_figures=[]</code></td></tr>
+</table>
+<h2>关键指标</h2>
+<pre>{
+  "amplitude_scaling": {
+    "target_power_ratio": 0.1600000022849633,
+    "short_window_mode": "fft"
+  },
+  "phase_randomization": {
+    "phase_changed_fraction": 0.46875,
+    "phase_mag_ratio": 1.0000000345100581
+  },
+  "gaussian_noise": {
+    "achieved_snr_db": -0.08101016728697243
+  },
+  "ablation_visualize": {
+    "phase": 12,
+    "output_dir": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\verification\\ablation_visualize_outputs",
+    "phase1": {
+      "input_csv": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\verification\\visualize_fixture_phase1.csv",
+      "exists": true,
+      "row_count": 4,
+      "missing_fields": []
+    },
+    "phase2": {
+      "input_csv": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\verification\\visualize_fixture_phase2.csv",
+      "exists": true,
+      "row_count": 12,
+      "missing_fields": []
+    },
+    "generated_figures": [
+      "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\verification\\ablation_visualize_outputs\\fig1_stft_heatmap.png",
+      "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\verification\\ablation_visualize_outputs\\fig2_phase1_bar.png",
+      "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\verification\\ablation_visualize_outputs\\fig3_amplitude_scaling.png",
+      "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\verification\\ablation_visualize_outputs\\fig4_phase_randomization.png",
+      "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\verification\\ablation_visualize_outputs\\fig5_noise_injection.png",
+      "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\verification\\ablation_visualize_outputs\\fig6_phase2_summary.png"
+    ]
+  }
+}</pre>
+<h2>生成图片</h2>
+<ul>
+<li><code>D:\NEOschool\2026BMI-\scripts\temporal_ablation\results\verification\ablation_temporal_amplitude_scaling_stft_before.png</code></li>
+<li><code>D:\NEOschool\2026BMI-\scripts\temporal_ablation\results\verification\ablation_temporal_amplitude_scaling_stft_after.png</code></li>
+<li><code>D:\NEOschool\2026BMI-\scripts\temporal_ablation\results\verification\ablation_temporal_amplitude_scaling_stft_diff.png</code></li>
+<li><code>D:\NEOschool\2026BMI-\scripts\temporal_ablation\results\verification\ablation_temporal_amplitude_phase_randomization_stft_before.png</code></li>
+<li><code>D:\NEOschool\2026BMI-\scripts\temporal_ablation\results\verification\ablation_temporal_amplitude_phase_randomization_stft_after.png</code></li>
+<li><code>D:\NEOschool\2026BMI-\scripts\temporal_ablation\results\verification\ablation_temporal_amplitude_phase_randomization_stft_diff.png</code></li>
+<li><code>D:\NEOschool\2026BMI-\scripts\temporal_ablation\results\verification\ablation_temporal_amplitude_gaussian_noise_stft_before.png</code></li>
+<li><code>D:\NEOschool\2026BMI-\scripts\temporal_ablation\results\verification\ablation_temporal_amplitude_gaussian_noise_stft_after.png</code></li>
+<li><code>D:\NEOschool\2026BMI-\scripts\temporal_ablation\results\verification\ablation_temporal_amplitude_gaussian_noise_stft_diff.png</code></li>
+<li><code>D:\NEOschool\2026BMI-\scripts\temporal_ablation\results\verification\ablation_visualize_outputs\fig1_stft_heatmap.png</code></li>
+<li><code>D:\NEOschool\2026BMI-\scripts\temporal_ablation\results\verification\ablation_visualize_outputs\fig2_phase1_bar.png</code></li>
+<li><code>D:\NEOschool\2026BMI-\scripts\temporal_ablation\results\verification\ablation_visualize_outputs\fig3_amplitude_scaling.png</code></li>
+<li><code>D:\NEOschool\2026BMI-\scripts\temporal_ablation\results\verification\ablation_visualize_outputs\fig4_phase_randomization.png</code></li>
+<li><code>D:\NEOschool\2026BMI-\scripts\temporal_ablation\results\verification\ablation_visualize_outputs\fig5_noise_injection.png</code></li>
+<li><code>D:\NEOschool\2026BMI-\scripts\temporal_ablation\results\verification\ablation_visualize_outputs\fig6_phase2_summary.png</code></li>
+</ul>
+</body>
+</html>

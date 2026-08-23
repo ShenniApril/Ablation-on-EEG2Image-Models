@@ -1,0 +1,62 @@
+{
+  "canonical_subject": 8,
+  "canonical_seeds": [
+    42,
+    3407,
+    9999,
+    2025,
+    1234
+  ],
+  "setting": "inter-subjects-averaged",
+  "conditions": [
+    "T1_50-150ms__alpha",
+    "T2_150-300ms__beta",
+    "T1_50-150ms__beta"
+  ],
+  "averaged_checkpoint_reference": {
+    "path": "D:\\NEOschool\\2026BMI-\\results\\inter-subjects-averaged\\sub-08\\checkpoint_test_best.pth",
+    "exists": true,
+    "role": "reference_only",
+    "usage": "provenance_or_cross_check_only",
+    "size_bytes": 14731189,
+    "last_modified": 1786033680.9797366
+  },
+  "methodology": "Independent seed checkpoints were evaluated first; averaged CSV/JSON were computed by arithmetic mean across seed result tables.",
+  "seed_runs": [
+    {
+      "seed": 42,
+      "checkpoint_path": "D:\\NEOschool\\2026BMI-\\results\\inter-subjects-seed42\\sub-08-seed42\\checkpoint_test_best.pth",
+      "seed_provenance_path": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\seeds\\seed-42\\seed_provenance.json",
+      "seed_csv_path": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\seeds\\seed-42\\phase2_seed_results.csv",
+      "seed_json_path": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\seeds\\seed-42\\phase2_seed_results.json"
+    },
+    {
+      "seed": 3407,
+      "checkpoint_path": "D:\\NEOschool\\2026BMI-\\results\\inter-subjects-seed3407\\sub-08-seed3407\\checkpoint_test_best.pth",
+      "seed_provenance_path": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\seeds\\seed-3407\\seed_provenance.json",
+      "seed_csv_path": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\seeds\\seed-3407\\phase2_seed_results.csv",
+      "seed_json_path": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\seeds\\seed-3407\\phase2_seed_results.json"
+    },
+    {
+      "seed": 9999,
+      "checkpoint_path": "D:\\NEOschool\\2026BMI-\\results\\inter-subjects-seed9999\\sub-08-seed9999\\checkpoint_test_best.pth",
+      "seed_provenance_path": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\seeds\\seed-9999\\seed_provenance.json",
+      "seed_csv_path": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\seeds\\seed-9999\\phase2_seed_results.csv",
+      "seed_json_path": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\seeds\\seed-9999\\phase2_seed_results.json"
+    },
+    {
+      "seed": 2025,
+      "checkpoint_path": "D:\\NEOschool\\2026BMI-\\results\\inter-subjects-seed2025\\sub-08-seed2025\\checkpoint_test_best.pth",
+      "seed_provenance_path": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\seeds\\seed-2025\\seed_provenance.json",
+      "seed_csv_path": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\seeds\\seed-2025\\phase2_seed_results.csv",
+      "seed_json_path": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\seeds\\seed-2025\\phase2_seed_results.json"
+    },
+    {
+      "seed": 1234,
+      "checkpoint_path": "D:\\NEOschool\\2026BMI-\\results\\inter-subjects-seed1234\\sub-08-seed1234\\checkpoint_test_best.pth",
+      "seed_provenance_path": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\seeds\\seed-1234\\seed_provenance.json",
+      "seed_csv_path": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\seeds\\seed-1234\\phase2_seed_results.csv",
+      "seed_json_path": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\seeds\\seed-1234\\phase2_seed_results.json"
+    }
+  ]
+}

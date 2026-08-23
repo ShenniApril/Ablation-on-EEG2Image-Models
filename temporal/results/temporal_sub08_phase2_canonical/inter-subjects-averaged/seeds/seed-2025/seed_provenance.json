@@ -1,0 +1,28 @@
+{
+  "canonical_subject": 8,
+  "canonical_seed": 2025,
+  "canonical_seed_set": [
+    42,
+    3407,
+    9999,
+    2025,
+    1234
+  ],
+  "setting": "inter-subjects-averaged",
+  "result_layer_average_target": "D:\\NEOschool\\2026BMI-\\results\\inter-subjects-averaged\\sub-08\\checkpoint_test_best.pth",
+  "seed_checkpoint_path": "D:\\NEOschool\\2026BMI-\\results\\inter-subjects-seed2025\\sub-08-seed2025\\checkpoint_test_best.pth",
+  "averaged_checkpoint_reference": {
+    "path": "D:\\NEOschool\\2026BMI-\\results\\inter-subjects-averaged\\sub-08\\checkpoint_test_best.pth",
+    "exists": true,
+    "role": "reference_only",
+    "usage": "provenance_or_cross_check_only",
+    "size_bytes": 14731189,
+    "last_modified": 1786033680.9797366
+  },
+  "conditions": [
+    "T1_50-150ms__alpha",
+    "T2_150-300ms__beta",
+    "T1_50-150ms__beta"
+  ],
+  "methodology": "Run Phase 2 on each seed checkpoint independently, then average result tables across seeds."
+}

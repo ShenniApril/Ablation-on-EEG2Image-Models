@@ -1,0 +1,265 @@
+{
+  "subject": 8,
+  "canonical_seeds": [
+    42,
+    3407,
+    9999,
+    2025,
+    1234
+  ],
+  "conditions": [
+    "T1_50-150ms__alpha",
+    "T2_150-300ms__beta",
+    "T1_50-150ms__beta"
+  ],
+  "paper_figure_setting": "intra-subjects-averaged",
+  "methodology": "5 independent seed checkpoints -> seed-level Phase 2 outputs -> result-layer average -> canonical averaged CSV/JSON -> canonical McNemar/FDR -> Fig.4A-D -> Fig.4 composite",
+  "averaged_checkpoint_policy": "Averaged checkpoints are reference-only and are not used as the primary Phase 2 result source.",
+  "generated_at": "2026-08-11T01:58:07",
+  "outputs": {
+    "intra-subjects-averaged": {
+      "setting_dir": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged",
+      "seed_outputs": {
+        "42": {
+          "csv": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\seeds\\seed-42\\phase2_seed_results.csv",
+          "json": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\seeds\\seed-42\\phase2_seed_results.json",
+          "provenance": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\seeds\\seed-42\\seed_provenance.json"
+        },
+        "3407": {
+          "csv": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\seeds\\seed-3407\\phase2_seed_results.csv",
+          "json": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\seeds\\seed-3407\\phase2_seed_results.json",
+          "provenance": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\seeds\\seed-3407\\seed_provenance.json"
+        },
+        "9999": {
+          "csv": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\seeds\\seed-9999\\phase2_seed_results.csv",
+          "json": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\seeds\\seed-9999\\phase2_seed_results.json",
+          "provenance": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\seeds\\seed-9999\\seed_provenance.json"
+        },
+        "2025": {
+          "csv": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\seeds\\seed-2025\\phase2_seed_results.csv",
+          "json": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\seeds\\seed-2025\\phase2_seed_results.json",
+          "provenance": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\seeds\\seed-2025\\seed_provenance.json"
+        },
+        "1234": {
+          "csv": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\seeds\\seed-1234\\phase2_seed_results.csv",
+          "json": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\seeds\\seed-1234\\phase2_seed_results.json",
+          "provenance": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\seeds\\seed-1234\\seed_provenance.json"
+        }
+      },
+      "averaged_outputs": {
+        "csv": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\phase2_canonical_averaged.csv",
+        "json": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\phase2_canonical_averaged.json",
+        "stats": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\mcnemar_fdr_results.csv",
+        "provenance": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\seed_provenance.json"
+      }
+    },
+    "inter-subjects-averaged": {
+      "setting_dir": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged",
+      "seed_outputs": {
+        "42": {
+          "csv": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\seeds\\seed-42\\phase2_seed_results.csv",
+          "json": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\seeds\\seed-42\\phase2_seed_results.json",
+          "provenance": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\seeds\\seed-42\\seed_provenance.json"
+        },
+        "3407": {
+          "csv": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\seeds\\seed-3407\\phase2_seed_results.csv",
+          "json": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\seeds\\seed-3407\\phase2_seed_results.json",
+          "provenance": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\seeds\\seed-3407\\seed_provenance.json"
+        },
+        "9999": {
+          "csv": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\seeds\\seed-9999\\phase2_seed_results.csv",
+          "json": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\seeds\\seed-9999\\phase2_seed_results.json",
+          "provenance": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\seeds\\seed-9999\\seed_provenance.json"
+        },
+        "2025": {
+          "csv": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\seeds\\seed-2025\\phase2_seed_results.csv",
+          "json": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\seeds\\seed-2025\\phase2_seed_results.json",
+          "provenance": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\seeds\\seed-2025\\seed_provenance.json"
+        },
+        "1234": {
+          "csv": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\seeds\\seed-1234\\phase2_seed_results.csv",
+          "json": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\seeds\\seed-1234\\phase2_seed_results.json",
+          "provenance": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\seeds\\seed-1234\\seed_provenance.json"
+        }
+      },
+      "averaged_outputs": {
+        "csv": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\phase2_canonical_averaged.csv",
+        "json": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\phase2_canonical_averaged.json",
+        "provenance": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\seed_provenance.json"
+      }
+    }
+  },
+  "execution_trace": {
+    "phase2_canonical_generation": {
+      "methodology": "Run Phase 2 on each seed checkpoint independently, save seed CSV/JSON, then compute arithmetic means across the five seed result tables to obtain canonical averaged CSV/JSON.",
+      "command": "python -S D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\run_temporal_sub08_phase2_canonical.py --subject 8 --settings intra-subjects-averaged inter-subjects-averaged --seeds 42 3407 9999 2025 1234",
+      "primary_inputs": [
+        "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_stft_ablation\\stft_ablation_results.csv",
+        "D:\\NEOschool\\2026BMI-\\results\\intra-subjects-seed42\\sub-08-seed42\\checkpoint_test_best.pth",
+        "D:\\NEOschool\\2026BMI-\\results\\intra-subjects-seed3407\\sub-08-seed3407\\checkpoint_test_best.pth",
+        "D:\\NEOschool\\2026BMI-\\results\\intra-subjects-seed9999\\sub-08-seed9999\\checkpoint_test_best.pth",
+        "D:\\NEOschool\\2026BMI-\\results\\intra-subjects-seed2025\\sub-08-seed2025\\checkpoint_test_best.pth",
+        "D:\\NEOschool\\2026BMI-\\results\\intra-subjects-seed1234\\sub-08-seed1234\\checkpoint_test_best.pth",
+        "D:\\NEOschool\\2026BMI-\\results\\inter-subjects-seed42\\sub-08-seed42\\checkpoint_test_best.pth",
+        "D:\\NEOschool\\2026BMI-\\results\\inter-subjects-seed3407\\sub-08-seed3407\\checkpoint_test_best.pth",
+        "D:\\NEOschool\\2026BMI-\\results\\inter-subjects-seed9999\\sub-08-seed9999\\checkpoint_test_best.pth",
+        "D:\\NEOschool\\2026BMI-\\results\\inter-subjects-seed2025\\sub-08-seed2025\\checkpoint_test_best.pth",
+        "D:\\NEOschool\\2026BMI-\\results\\inter-subjects-seed1234\\sub-08-seed1234\\checkpoint_test_best.pth"
+      ],
+      "primary_outputs": [
+        "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\phase2_canonical_averaged.csv",
+        "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\phase2_canonical_averaged.json",
+        "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\phase2_canonical_averaged.csv",
+        "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\inter-subjects-averaged\\phase2_canonical_averaged.json"
+      ],
+      "key_scripts": [
+        "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\run_temporal_sub08_phase2_canonical.py",
+        "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\ablation_temporal_amplitude.py",
+        "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\statistical_testing.py"
+      ],
+      "notes": [
+        "Averaged checkpoints are reference-only and are retained for provenance or cross-check purposes only.",
+        "The canonical averaged CSV/JSON are the actual result-layer averages derived from the five seed-level result tables."
+      ]
+    },
+    "paper_figure_generation": {
+      "setting_used": "intra-subjects-averaged",
+      "command": "python -S D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\ablation_visualize.py --phase 2 --phase2-csv D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\phase2_canonical_averaged.csv --mcnemar-csv D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\mcnemar_fdr_results.csv --output-dir D:\\NEOschool\\2026BMI-\\assets\\temporal_ablation",
+      "actual_inputs_used": {
+        "canonical_averaged_csv": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\phase2_canonical_averaged.csv",
+        "canonical_averaged_json": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\phase2_canonical_averaged.json",
+        "canonical_mcnemar_csv": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\mcnemar_fdr_results.csv"
+      },
+      "key_scripts": [
+        "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\ablation_visualize.py",
+        "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\run_temporal_sub08_phase2_canonical.py",
+        "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\ablation_temporal_amplitude.py",
+        "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\statistical_testing.py"
+      ],
+      "generation_order": [
+        {
+          "step": 1,
+          "artifact": "intra-subjects canonical seed CSV/JSON",
+          "depends_on": [
+            "five intra-subject seed checkpoints",
+            "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\ablation_temporal_amplitude.py"
+          ]
+        },
+        {
+          "step": 2,
+          "artifact": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\phase2_canonical_averaged.csv",
+          "depends_on": [
+            "five intra-subject seed CSV files"
+          ]
+        },
+        {
+          "step": 3,
+          "artifact": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\phase2_canonical_averaged.json",
+          "depends_on": [
+            "five intra-subject seed JSON files"
+          ]
+        },
+        {
+          "step": 4,
+          "artifact": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\mcnemar_fdr_results.csv",
+          "depends_on": [
+            "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\phase2_canonical_averaged.json",
+            "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\statistical_testing.py"
+          ]
+        },
+        {
+          "step": 5,
+          "artifact": "Fig.4A-D panel PNGs",
+          "depends_on": [
+            "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\phase2_canonical_averaged.csv",
+            "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\mcnemar_fdr_results.csv",
+            "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\ablation_visualize.py"
+          ]
+        },
+        {
+          "step": 6,
+          "artifact": "D:\\NEOschool\\2026BMI-\\assets\\temporal_ablation\\fig4_phase2_composite.png",
+          "depends_on": [
+            "D:\\NEOschool\\2026BMI-\\assets\\temporal_ablation\\fig4a_phase2_scaling.png",
+            "D:\\NEOschool\\2026BMI-\\assets\\temporal_ablation\\fig4b_phase2_phase_randomization.png",
+            "D:\\NEOschool\\2026BMI-\\assets\\temporal_ablation\\fig4c_phase2_noise_injection.png",
+            "D:\\NEOschool\\2026BMI-\\assets\\temporal_ablation\\fig4d_phase2_summary.png",
+            "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\ablation_visualize.py"
+          ]
+        }
+      ],
+      "notes": [
+        "The paper-facing Fig.4A-D and the composite are generated from the intra-subjects canonical averaged result set only.",
+        "The averaged checkpoint D:\\NEOschool\\2026BMI-\\results\\intra-subjects-averaged\\sub-08\\checkpoint_test_best.pth remains reference-only and is not a direct input to Fig.4 rendering."
+      ]
+    }
+  },
+  "paper_figure_traceability": {
+    "figure_group": "Fig.4A-D and fig4_phase2_composite.png",
+    "setting": "intra-subjects-averaged",
+    "actual_inputs_used": {
+      "canonical_averaged_csv": {
+        "path": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\phase2_canonical_averaged.csv",
+        "timestamp": "2026-08-11T01:38:48",
+        "size_bytes": 6539,
+        "sha256": "444AAA804BA18288A4A7B19979CAD497C30D4121353D16FE153E353A243446C6"
+      },
+      "canonical_averaged_json": {
+        "path": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\phase2_canonical_averaged.json",
+        "timestamp": "2026-08-11T01:38:49",
+        "size_bytes": 975867,
+        "sha256": "F39C4BA4E63405CD0D49096898CD58BD9F5BD6142E454137F7C84991AE9E9511"
+      },
+      "canonical_mcnemar_csv": {
+        "path": "D:\\NEOschool\\2026BMI-\\scripts\\temporal_ablation\\results\\temporal_sub08_phase2_canonical\\intra-subjects-averaged\\mcnemar_fdr_results.csv",
+        "timestamp": "2026-08-11T01:48:09",
+        "size_bytes": 6002,
+        "sha256": "710FBDEDBBA3A3AA0DDFA75BBF8619134F21096E99CB66771F37D30056140B81"
+      }
+    },
+    "reference_only_input": {
+      "path": "D:\\NEOschool\\2026BMI-\\results\\intra-subjects-averaged\\sub-08\\checkpoint_test_best.pth",
+      "role": "reference_only",
+      "note": "Retained for provenance/cross-check only; not used as the direct source of the final Fig.4A-D/composite outputs."
+    },
+    "final_outputs": {
+      "fig4a": {
+        "path": "D:\\NEOschool\\2026BMI-\\assets\\temporal_ablation\\fig4a_phase2_scaling.png",
+        "timestamp": "2026-08-11T01:55:19",
+        "size_bytes": 329779,
+        "sha256": "6F9E65956987A3CC46DA085D5761B254D64070350B63A45D1F9CB1E44633961B"
+      },
+      "fig4b": {
+        "path": "D:\\NEOschool\\2026BMI-\\assets\\temporal_ablation\\fig4b_phase2_phase_randomization.png",
+        "timestamp": "2026-08-11T01:55:20",
+        "size_bytes": 251985,
+        "sha256": "5ED9057BCB4EFDFA3485A2A40EC88E152B1B8380AA2B351DA032D8F01FE18BF4"
+      },
+      "fig4c": {
+        "path": "D:\\NEOschool\\2026BMI-\\assets\\temporal_ablation\\fig4c_phase2_noise_injection.png",
+        "timestamp": "2026-08-11T01:55:20",
+        "size_bytes": 206904,
+        "sha256": "A81389B9E17CFCE2691F42F492EF6A5C4DE5C927D32EAEA2A497C7A6F1A59EC4"
+      },
+      "fig4d": {
+        "path": "D:\\NEOschool\\2026BMI-\\assets\\temporal_ablation\\fig4d_phase2_summary.png",
+        "timestamp": "2026-08-11T01:55:20",
+        "size_bytes": 148027,
+        "sha256": "453154A4A7F814CBEF047F5F3F496658AA723F06B4A33EB863B5E309D4BD0D24"
+      },
+      "composite": {
+        "path": "D:\\NEOschool\\2026BMI-\\assets\\temporal_ablation\\fig4_phase2_composite.png",
+        "timestamp": "2026-08-11T01:55:23",
+        "size_bytes": 543875,
+        "sha256": "A80503673ACCED77F62DC6B5F6A3182B8573296CE0689F50F040E8B6155422AA"
+      },
+      "archive_composite": {
+        "path": "D:\\NEOschool\\2026BMI-\\archive\\results_final_figures\\fig4_phase2_composite.png",
+        "timestamp": "2026-08-11T01:55:23",
+        "size_bytes": 543875,
+        "sha256": "A80503673ACCED77F62DC6B5F6A3182B8573296CE0689F50F040E8B6155422AA",
+        "copied_from": "D:\\NEOschool\\2026BMI-\\assets\\temporal_ablation\\fig4_phase2_composite.png"
+      }
+    }
+  }
+}
