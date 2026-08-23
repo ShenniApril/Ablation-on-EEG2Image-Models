@@ -73,8 +73,8 @@ matplotlib.rcParams.update(
 TW_ORDER = ["T0_0-50ms", "T1_50-150ms", "T2_150-300ms", "T3_300-500ms", "T4_500-800ms"]
 FB_ORDER = ["delta", "theta", "alpha", "beta", "low_gamma", "gamma", "high_gamma"]
 TW_SHORT_LABELS = {
-    "T0_0-50ms": "T0 (0-50ms)",
-    "T1_50-150ms": "T1 (50-150ms)",
+    "T0_0-50ms": "T0 (0-52ms)",
+    "T1_50-150ms": "T1 (52-152ms)",
     "T2_150-300ms": "T2 (150-300ms)",
     "T3_300-500ms": "T3 (300-500ms)",
     "T4_500-800ms": "T4 (500-800ms)",
