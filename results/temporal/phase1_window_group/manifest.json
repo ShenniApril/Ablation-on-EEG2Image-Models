@@ -1,0 +1,116 @@
+{
+  "accuracy_unit": "fraction; drops are baseline minus ablated accuracy",
+  "algorithm_version": "dc-preserving-full-frequency-window-v1",
+  "completed_by_setting": {
+    "inter-subjects": 300,
+    "intra-subjects": 300
+  },
+  "completed_evaluations": 600,
+  "confidence_interval": "two-sided 95% Student-t interval across subjects",
+  "evaluation": {
+    "checkpoint": "checkpoint_test_best.pth",
+    "device": "NVIDIA GeForce RTX 5060 Laptop GPU",
+    "drop": "same-checkpoint baseline accuracy minus masked accuracy",
+    "eeg_sample_range": [
+      0,
+      250
+    ],
+    "eeg_test_augmentation": false,
+    "image_test_augmentation": true,
+    "inference_batch_size": 200,
+    "inter_channels": "all 63 channels",
+    "intra_channels": [
+      "P7",
+      "P5",
+      "P3",
+      "P1",
+      "Pz",
+      "P2",
+      "P4",
+      "P6",
+      "P8",
+      "PO7",
+      "PO3",
+      "POz",
+      "PO4",
+      "PO8",
+      "O1",
+      "Oz",
+      "O2"
+    ],
+    "random_order": false,
+    "repetitions_averaged": true,
+    "top1_top5": "paired retrieval against the same subject's image features"
+  },
+  "expected_evaluations": 600,
+  "fdr": "Benjamini-Hochberg separately for Top-1 and Top-5 across five windows within each setting",
+  "group_unit": "subject; five seed-level paired drops averaged within subject",
+  "inference": "two-sided one-sample t-test of subject-level paired drops against zero",
+  "sample_rate_hz": 250.0,
+  "settings": [
+    "intra-subjects",
+    "inter-subjects"
+  ],
+  "status": "complete",
+  "stft": {
+    "long_window_masking": "zero non-DC STFT coefficients and preserve the DC bin",
+    "nfft": 64,
+    "noverlap": 16,
+    "nperseg": 32,
+    "short_window_fallback": "T0 and T1 are shorter than 32 samples; replace segment by its mean"
+  },
+  "subjects": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "training_seeds": [
+    1234,
+    2025,
+    42,
+    9999,
+    3407
+  ],
+  "versions": {
+    "numpy": "2.5.1",
+    "python": "3.12.2",
+    "scipy": "1.18.0",
+    "torch": "2.7.0+cu128"
+  },
+  "window_labels": {
+    "T0": "T0_0-52ms",
+    "T1": "T1_52-152ms",
+    "T2": "T2_152-300ms",
+    "T3": "T3_300-500ms",
+    "T4": "T4_500-800ms"
+  },
+  "window_slices": {
+    "T0": [
+      0,
+      13
+    ],
+    "T1": [
+      13,
+      38
+    ],
+    "T2": [
+      38,
+      75
+    ],
+    "T3": [
+      75,
+      125
+    ],
+    "T4": [
+      125,
+      200
+    ]
+  }
+}
