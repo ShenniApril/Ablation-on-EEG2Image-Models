@@ -43,19 +43,29 @@ from statsmodels.stats.multitest import multipletests
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-RESULTS_DIR = SCRIPT_DIR / "results" / "generalization_ablation"
-OUTPUT_DIR = SCRIPT_DIR.parent.parent / "assets" / "generalization_temporal"
+REPO_ROOT = SCRIPT_DIR.parents[1]
+if SCRIPT_DIR.name == "temporal_ablation":
+    RESULTS_DIR = SCRIPT_DIR / "results" / "generalization_ablation"
+    OUTPUT_DIR = REPO_ROOT / "assets" / "generalization_temporal"
+else:
+    RESULTS_DIR = REPO_ROOT / "results" / "temporal" / "generalization_ablation"
+    OUTPUT_DIR = REPO_ROOT / "assets" / "temporal"
 
 WIDTH_CM = 14.5
 HEIGHT_STANDARD_CM = 8.8
-HEIGHT_MEDIUM_CM = 10.2
 HEIGHT_TALL_CM = 11.5
+# 论文并排尺寸: figure* 内两个 minipage 各 0.49\textwidth ≈ 8.9cm,
+# LaTeX 端按原始尺寸 1:1 放置, 字号保持真实 pt 值, 避免缩放后字变小。
+# 窄版绘图区仅约 6cm, 故刻度标签与格内数值字号相应下调并旋转 x 轴标签。
+PAPER_WIDTH_CM = 8.9
+PAPER_HEIGHT_CM = 7.8
+PAPER_TICK_LABEL_SIZE = 7.2
+PAPER_CELL_TEXT_SIZE = 6.5
 DPI = 600
 
 AXIS_LABEL_SIZE = 9
 TICK_LABEL_SIZE = 8.5
 LEGEND_SIZE = 8.5
-CELL_TEXT_SIZE = 8
 ASTERISK_SIZE = 10
 FULL_PROFILE_TICK_SIZE = 7.4
 
@@ -137,6 +147,7 @@ def get_sig_asterisks(p_raw: float, p_fdr: float) -> str:
 def process_data(setting: str) -> tuple[pd.DataFrame | None, float | None]:
     all_data = []
     baseline_top1s = []
+    baseline_by_subject = {}
     used_csvs = []
 
     for sub in range(1, 11):
@@ -151,7 +162,9 @@ def process_data(setting: str) -> tuple[pd.DataFrame | None, float | None]:
 
         baseline_row = df[df["name"] == "baseline"]
         if not baseline_row.empty:
-            baseline_top1s.append(float(baseline_row.iloc[0]["top1"]))
+            baseline = float(baseline_row.iloc[0]["top1"])
+            baseline_top1s.append(baseline)
+            baseline_by_subject[sub] = baseline
 
     if not all_data:
         print(f"[Skip] No CSV files found for {setting}")
@@ -160,19 +173,28 @@ def process_data(setting: str) -> tuple[pd.DataFrame | None, float | None]:
     print(f"[Trace] {setting}: loaded {len(used_csvs)} CSV files")
     full_df = pd.concat(all_data, ignore_index=True)
     plot_df = full_df[full_df["name"].str.contains("__", na=False)].copy()
+    plot_df = plot_df[plot_df["subject"].isin(baseline_by_subject)].copy()
+    plot_df["paired_top1_drop"] = plot_df.apply(
+        lambda row: baseline_by_subject[int(row["subject"])] - float(row["top1"]),
+        axis=1,
+    )
+    print("[Trace] Top-1 drops recomputed from paired subject accuracies")
 
     avg_baseline = float(np.mean(baseline_top1s)) if baseline_top1s else None
     stats_records = []
 
     for name, group in plot_df.groupby("name"):
-        drops1 = group["top1_drop"].dropna().astype(float).values
+        drops1 = group["paired_top1_drop"].dropna().astype(float).values
         drops5 = group["top5_drop"].dropna().astype(float).values
         if len(drops1) == 0:
             continue
 
         p_raw = 1.0
         if len(drops1) > 1:
-            _, p_raw = ttest_1samp(drops1, 0)
+            if np.std(drops1, ddof=1) == 0.0:
+                p_raw = 1.0 if np.mean(drops1) == 0.0 else 0.0
+            else:
+                _, p_raw = ttest_1samp(drops1, 0)
 
         time_window, freq_band = name.split("__", 1)
         stats_records.append(
@@ -208,7 +230,9 @@ def plot_heatmap(stats_df: pd.DataFrame, setting: str, output_dir: Path) -> None
             if not row.empty:
                 matrix[row_idx, col_idx] = float(row.iloc[0]["mean1"])
 
-    fig, ax = plt.subplots(figsize=figure_size(HEIGHT_MEDIUM_CM))
+    fig, ax = plt.subplots(
+        figsize=(cm_to_inches(PAPER_WIDTH_CM), cm_to_inches(PAPER_HEIGHT_CM))
+    )
     vmax = max(0.15, np.nanmax(matrix)) if not np.all(np.isnan(matrix)) else 0.15
     vmin = min(0.0, np.nanmin(matrix)) if not np.all(np.isnan(matrix)) else 0.0
     image = ax.imshow(matrix, cmap="RdYlGn_r", aspect="auto", vmin=vmin, vmax=vmax, interpolation="nearest")
@@ -219,11 +243,15 @@ def plot_heatmap(stats_df: pd.DataFrame, setting: str, output_dir: Path) -> None
             row = stats_df[stats_df["name"] == cond_name]
             value = matrix[row_idx, col_idx]
             if np.isnan(value):
-                ax.text(col_idx, row_idx, "N/A", ha="center", va="center", fontsize=CELL_TEXT_SIZE, color="gray")
+                ax.text(col_idx, row_idx, "N/A", ha="center", va="center", fontsize=PAPER_CELL_TEXT_SIZE, color="gray")
                 continue
 
             color = "white" if abs(value) > vmax * 0.6 else "black"
-            text_value = f"{value:+.3f}"
+            # 并排布局下绘图区宽约 5cm, 7 列格宽不足以容纳 3 位小数 (6 字符),
+            # 故论文版保留 2 位小数 (5 字符), 精确值见正文 Table
+            text_value = f"{value:+.2f}"
+            if text_value == "-0.00":
+                text_value = "+0.00"
             if not row.empty and row.iloc[0]["sig"]:
                 text_value += f"\n{row.iloc[0]['sig']}"
             ax.text(
@@ -232,7 +260,7 @@ def plot_heatmap(stats_df: pd.DataFrame, setting: str, output_dir: Path) -> None
                 text_value,
                 ha="center",
                 va="center",
-                fontsize=CELL_TEXT_SIZE,
+                fontsize=PAPER_CELL_TEXT_SIZE,
                 color=color,
                 fontweight="bold",
             )
@@ -248,18 +276,28 @@ def plot_heatmap(stats_df: pd.DataFrame, setting: str, output_dir: Path) -> None
                     )
 
     ax.set_xticks(range(len(FB_ORDER)))
-    ax.set_xticklabels([short_freq_label(freq_band) for freq_band in FB_ORDER])
+    ax.set_xticklabels(
+        [short_freq_label(freq_band) for freq_band in FB_ORDER],
+        rotation=45,
+        ha="right",
+        rotation_mode="anchor",
+        fontsize=PAPER_TICK_LABEL_SIZE,
+    )
     ax.set_yticks(range(len(TW_ORDER)))
-    ax.set_yticklabels([short_time_label(time_window) for time_window in TW_ORDER])
-    ax.tick_params(axis="y", pad=6)
+    ax.set_yticklabels(
+        [short_time_label(time_window) for time_window in TW_ORDER],
+        fontsize=PAPER_TICK_LABEL_SIZE,
+    )
+    ax.tick_params(axis="y", pad=4)
     ax.set_xlabel("Frequency Band")
     ax.set_ylabel("Time Window")
 
-    colorbar = fig.colorbar(image, ax=ax, shrink=0.88, pad=0.02)
+    # 显式指定 fraction, 避免 colorbar 默认按比例二次压缩本已很窄的绘图区
+    colorbar = fig.colorbar(image, ax=ax, fraction=0.045, pad=0.03)
     colorbar.set_label("Top-1 accuracy drop")
-    colorbar.ax.tick_params(labelsize=TICK_LABEL_SIZE)
+    colorbar.ax.tick_params(labelsize=PAPER_TICK_LABEL_SIZE)
 
-    fig.subplots_adjust(left=0.23, right=0.93, bottom=0.16, top=0.96)
+    fig.subplots_adjust(left=0.215, right=0.84, bottom=0.25, top=0.96)
     save_figure(fig, output_dir / f"group_{short_setting_name(setting)}_temporal_heatmap.png")
 
 
