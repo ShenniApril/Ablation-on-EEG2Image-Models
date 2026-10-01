@@ -85,7 +85,7 @@ FB_ORDER = ["delta", "theta", "alpha", "beta", "low_gamma", "gamma", "high_gamma
 TW_SHORT_LABELS = {
     "T0_0-50ms": "T0 (0-52ms)",
     "T1_50-150ms": "T1 (52-152ms)",
-    "T2_150-300ms": "T2 (150-300ms)",
+    "T2_150-300ms": "T2 (152-300ms)",
     "T3_300-500ms": "T3 (300-500ms)",
     "T4_500-800ms": "T4 (500-800ms)",
 }
@@ -230,28 +230,32 @@ def plot_heatmap(stats_df: pd.DataFrame, setting: str, output_dir: Path) -> None
             if not row.empty:
                 matrix[row_idx, col_idx] = float(row.iloc[0]["mean1"])
 
+    display_matrix = matrix
     fig, ax = plt.subplots(
         figsize=(cm_to_inches(PAPER_WIDTH_CM), cm_to_inches(PAPER_HEIGHT_CM))
     )
-    vmax = max(0.15, np.nanmax(matrix)) if not np.all(np.isnan(matrix)) else 0.15
-    vmin = min(0.0, np.nanmin(matrix)) if not np.all(np.isnan(matrix)) else 0.0
-    image = ax.imshow(matrix, cmap="RdYlGn_r", aspect="auto", vmin=vmin, vmax=vmax, interpolation="nearest")
+    vmax = max(0.15, np.nanmax(display_matrix)) if not np.all(np.isnan(display_matrix)) else 0.15
+    vmin = min(0.0, np.nanmin(display_matrix)) if not np.all(np.isnan(display_matrix)) else 0.0
+    image = ax.imshow(display_matrix, cmap="RdYlGn_r", aspect="auto", vmin=vmin, vmax=vmax, interpolation="nearest")
 
     for row_idx, time_window in enumerate(TW_ORDER):
         for col_idx, freq_band in enumerate(FB_ORDER):
             cond_name = f"{time_window}__{freq_band}"
             row = stats_df[stats_df["name"] == cond_name]
-            value = matrix[row_idx, col_idx]
+            value = display_matrix[row_idx, col_idx]
             if np.isnan(value):
                 ax.text(col_idx, row_idx, "N/A", ha="center", va="center", fontsize=PAPER_CELL_TEXT_SIZE, color="gray")
                 continue
 
             color = "white" if abs(value) > vmax * 0.6 else "black"
-            # 并排布局下绘图区宽约 5cm, 7 列格宽不足以容纳 3 位小数 (6 字符),
-            # 故论文版保留 2 位小数 (5 字符), 精确值见正文 Table
-            text_value = f"{value:+.2f}"
-            if text_value == "-0.00":
-                text_value = "+0.00"
+            if setting == "inter-subjects":
+                text_value = f"{value:.3f}"
+                if text_value == "-0.000":
+                    text_value = "0.000"
+            else:
+                text_value = f"{value:+.2f}"
+                if text_value == "-0.00":
+                    text_value = "+0.00"
             if not row.empty and row.iloc[0]["sig"]:
                 text_value += f"\n{row.iloc[0]['sig']}"
             ax.text(
@@ -264,16 +268,6 @@ def plot_heatmap(stats_df: pd.DataFrame, setting: str, output_dir: Path) -> None
                 color=color,
                 fontweight="bold",
             )
-
-    if not np.all(np.isnan(matrix)):
-        for row_idx, time_window in enumerate(TW_ORDER):
-            for col_idx, freq_band in enumerate(FB_ORDER):
-                cond_name = f"{time_window}__{freq_band}"
-                row = stats_df[stats_df["name"] == cond_name]
-                if not row.empty and row.iloc[0]["sig"] == "**":
-                    ax.add_patch(
-                        plt.Rectangle((col_idx - 0.5, row_idx - 0.5), 1, 1, fill=False, edgecolor="black", linewidth=1.6)
-                    )
 
     ax.set_xticks(range(len(FB_ORDER)))
     ax.set_xticklabels(
@@ -294,8 +288,14 @@ def plot_heatmap(stats_df: pd.DataFrame, setting: str, output_dir: Path) -> None
 
     # 显式指定 fraction, 避免 colorbar 默认按比例二次压缩本已很窄的绘图区
     colorbar = fig.colorbar(image, ax=ax, fraction=0.045, pad=0.03)
+    colorbar.outline.set_visible(False)
     colorbar.set_label("Top-1 accuracy drop")
+    if setting == "inter-subjects":
+        colorbar.ax.yaxis.set_major_formatter("{x:.3f}")
     colorbar.ax.tick_params(labelsize=PAPER_TICK_LABEL_SIZE)
+
+    for spine in ax.spines.values():
+        spine.set_visible(False)
 
     fig.subplots_adjust(left=0.215, right=0.84, bottom=0.25, top=0.96)
     save_figure(fig, output_dir / f"group_{short_setting_name(setting)}_temporal_heatmap.png")
