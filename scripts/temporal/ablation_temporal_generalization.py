@@ -7,10 +7,10 @@ from torch.utils.data import DataLoader
 import csv
 import json
 
-# Add parent directories to path so we can import from NeuroBridge if needed
+# Add the repository root to sys.path so module.* and local scripts resolve after cloning
 SCRIPT_DIR = Path(__file__).resolve().parent
-sys.path.append(str(SCRIPT_DIR.parent.parent))
-sys.path.append(r"d:\NEOschool\eegtoimage\NeuroBridge-main")
+REPO_ROOT = SCRIPT_DIR.parents[1]
+sys.path.insert(0, str(REPO_ROOT))
 
 from module.dataset import EEGPreImageDataset
 from module.eeg_encoder.model import EEGProject, TSConv
@@ -86,7 +86,7 @@ def parse_args() -> argparse.Namespace:
         default="priority",
         help="priority: 只跑优先级≥4；standard: 优先级≥3；full: 全部组合"
     )
-    REAL_DATA_DIR = Path(r"d:\NEOschool\eegtoimage\NeuroBridge-main\data")
+    REAL_DATA_DIR = REPO_ROOT / "data"
     parser.add_argument(
         "--eeg-data-dir",
         type=Path,
@@ -107,6 +107,12 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=SCRIPT_DIR / "results" / "generalization_ablation",
     )
+    parser.add_argument(
+        "--base-results-dir",
+        type=Path,
+        default=REPO_ROOT / "results",
+        help="Root directory holding the per-seed checkpoint subdirectories",
+    )
     return parser.parse_args()
 
 def main():
@@ -121,7 +127,7 @@ def main():
     # 泛化评估所需的设定与种子列表
     settings = ['intra-subjects', 'inter-subjects']
     seeds = [1234, 2025, 42, 9999, 3407]
-    base_results_dir = Path(r"d:\NEOschool\2026BMI-\results")
+    base_results_dir = args.base_results_dir
     
     # 初始化累加结构
     accumulated_results = {setting: {exp['name']: [] for exp in experiments} for setting in settings}

@@ -33,7 +33,6 @@ from scipy.stats import ttest_1samp
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent.parent
 sys.path.insert(0, str(REPO_ROOT))
-sys.path.insert(0, str(REPO_ROOT.parent / "eegtoimage" / "NeuroBridge-main"))
 
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
@@ -117,10 +116,10 @@ def parse_args():
     
     # Paths assuming running from NeuroBridge folder
     default_data_dir = Path("data")
-    parser.add_argument("--base-ckpt-dir", type=Path, default=Path(r"d:\NEOschool\2026BMI-\results"))
-    parser.add_argument("--eeg-data-dir", type=Path, default=REPO_ROOT.parent / "eegtoimage" / "NeuroBridge-main" / "data" / "things_eeg" / "preprocessed_eeg")
-    parser.add_argument("--image-feature-dir", type=Path, default=REPO_ROOT.parent / "eegtoimage" / "NeuroBridge-main" / "data" / "things_eeg" / "image_feature" / "RN50")
-    parser.add_argument("--aug-feature-dir", type=Path, default=REPO_ROOT.parent / "eegtoimage" / "NeuroBridge-main" / "data" / "things_eeg" / "image_feature" / "RN50" / "GaussianBlur-GaussianNoise-LowResolution-Mosaic")
+    parser.add_argument("--base-ckpt-dir", type=Path, default=REPO_ROOT / "results")
+    parser.add_argument("--eeg-data-dir", type=Path, default=REPO_ROOT / "data" / "things_eeg" / "preprocessed_eeg")
+    parser.add_argument("--image-feature-dir", type=Path, default=REPO_ROOT / "data" / "things_eeg" / "image_feature" / "RN50")
+    parser.add_argument("--aug-feature-dir", type=Path, default=REPO_ROOT / "data" / "things_eeg" / "image_feature" / "RN50" / "GaussianBlur-GaussianNoise-LowResolution-Mosaic")
     parser.add_argument("--output-dir", type=Path, default=SCRIPT_DIR / "results" / "temporal_sub08_phase1_canonical")
     
     return parser.parse_args()

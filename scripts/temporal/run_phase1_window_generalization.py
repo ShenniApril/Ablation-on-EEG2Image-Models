@@ -540,12 +540,7 @@ def _summarize(
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    active_root = Path(r"d:\NEOschool\2026BMI-")
-    default_checkpoint_root = (
-        active_root / "results"
-        if (active_root / "results").is_dir()
-        else WORKSPACE_ROOT / "results"
-    )
+    default_checkpoint_root = WORKSPACE_ROOT / "results"
     default_output_dir = (
         SCRIPT_DIR / "results" / "phase1_window_group"
         if SCRIPT_DIR.name == "temporal_ablation"
@@ -553,11 +548,11 @@ def _parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--neurobridge-root", type=Path,
-        default=Path(r"d:\NEOschool\eegtoimage\NeuroBridge-main"),
+        default=WORKSPACE_ROOT,
     )
     parser.add_argument(
         "--data-root", type=Path,
-        default=Path(r"d:\NEOschool\eegtoimage\NeuroBridge-main\data\things_eeg"),
+        default=WORKSPACE_ROOT / "data" / "things_eeg",
     )
     parser.add_argument(
         "--checkpoint-root", type=Path, default=default_checkpoint_root

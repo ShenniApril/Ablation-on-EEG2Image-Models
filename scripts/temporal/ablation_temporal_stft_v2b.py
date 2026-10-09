@@ -23,7 +23,7 @@ ablation_temporal_stft.py — Phase 1: STFT Time-Frequency Masking Ablation
   python ablation_temporal_stft.py --mode full        # 跑全部组合
 
 作者：乔钰成 / NEOschool 项目组
-版本：1.0
+版本：2.0-B  (三档 Gamma: low_gamma 30-45Hz / gamma 45-70Hz / high_gamma 70-100Hz + Phase 3)
 """
 
 from __future__ import annotations
@@ -93,14 +93,23 @@ TIME_WINDOWS = {
 # 依据：Fries 2015 (gamma前馈/beta反馈); FourierMask Wang 2026 (beta+gamma关键)
 # 注意：250Hz 采样率下，Nyquist = 125Hz，hi_gamma 上限设为 120Hz
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# 频段定义 v2-B
+# 三档 Gamma：
+#   low_gamma  30-45 Hz : 经典 Gamma 下端（Bhattacharyya 2019 BCI low-gamma）
+#   gamma      45-70 Hz : 核心视觉 Gamma，Fries 2015 前馈峰值区域（V1/V2）
+#   high_gamma 70-100 Hz: 宽带高 Gamma；100Hz = THINGS-EEG2 在线滤波上限
+#                         注：70-100Hz scalp EEG EMG 伪迹主导，结果需谨慎
+# 已删除 hi_gamma 80-120Hz：100-120Hz 超出数据集物理上限，全为数值噪声
+# ---------------------------------------------------------------------------
 FREQ_BANDS = {
     "delta":      (1.0,   4.0),
     "theta":      (4.0,   8.0),
     "alpha":      (8.0,   13.0),
     "beta":       (13.0,  30.0),
-    "low_gamma":  (30.0,  45.0),
-    "gamma":      (45.0,  70.0),
-    "high_gamma": (70.0, 100.0),
+    "low_gamma":  (30.0,  45.0),   # 经典 Gamma 下端
+    "gamma":      (45.0,  70.0),   # 核心视觉 Gamma（Fries 2015）
+    "high_gamma": (70.0, 100.0),   # 宽带 Gamma 高端（替代原 hi_gamma 80-120Hz）
 }
 
 # ---------------------------------------------------------------------------
@@ -155,7 +164,8 @@ PRIORITY_MATRIX = {
 CONTROL_CONDITIONS = [
     {"name": "baseline",       "time_window": None,          "freq_band": None},
     {"name": "full_mask_all",  "time_window": "T_full",      "freq_band": "all_bands"},  # 全部频段置零
-    {"name": "random_control", "time_window": "T1_50-150ms", "freq_band": "delta"},      # 随机低优先级对照
+    {"name": "random_control",   "time_window": "T1_50-150ms", "freq_band": "delta"},        # 随机低优先级对照
+    {"name": "full_time_gamma", "time_window": "T_full",      "freq_band": "gamma"},          # 全段 gamma(45-70Hz)，验证时间特异性
 ]
 
 
@@ -355,12 +365,180 @@ def retrieval_metrics(
         "top5":        float((ranks <= 5).float().mean()),
         "mean_rank":   float(ranks.float().mean()),
         "median_rank": float(ranks.float().median()),
+        "raw_preds":   (ranks <= 1).tolist(),
     }
 
 
 # ===========================================================================
 # 实验主逻辑
 # ===========================================================================
+
+
+# ===========================================================================
+# Phase 3: Single-Window Full-Frequency STFT Masking
+# ===========================================================================
+
+PHASE3_CONDITIONS = [
+    {"name": "baseline",      "time_window": None},
+    {"name": "full_freq_T0",  "time_window": "T0_0-50ms"},
+    {"name": "full_freq_T1",  "time_window": "T1_50-150ms"},
+    {"name": "full_freq_T2",  "time_window": "T2_150-300ms"},   # Core hypothesis: largest drop
+    {"name": "full_freq_T3",  "time_window": "T3_300-500ms"},
+    {"name": "full_freq_T4",  "time_window": "T4_500-800ms"},
+]
+
+
+def stft_mask_full_freq_window(
+    eeg: np.ndarray,
+    time_window: tuple,
+    fs: float = FS,
+    nperseg: int = STFT_NPERSEG,
+    noverlap: int = STFT_NOVERLAP,
+    nfft: int = STFT_NFFT,
+) -> np.ndarray:
+    """
+    Phase 3: zero ALL STFT frequency bins within the target time window.
+
+    Equivalent to replacing that segment with a near-DC (flat) signal,
+    erasing ALL oscillatory information in that window.
+
+    vs Phase 1: Phase 1 masks one frequency band per run.
+                Phase 3 masks every band simultaneously per run.
+                -> answers "which TIME WINDOW carries the overall decoding information"
+
+    The DC component (bin 0) is preserved to maintain the signal mean.
+    """
+    eeg = np.asarray(eeg, dtype=np.float32)
+    original_shape = eeg.shape
+    t_start, t_end = time_window
+
+    flat    = eeg.reshape(-1, eeg.shape[-1])
+    segment = flat[:, t_start:t_end]
+
+    if segment.shape[-1] < nperseg:
+        dc = segment.mean(axis=-1, keepdims=True)
+        ablated = np.broadcast_to(dc, segment.shape).copy().astype(np.float32)
+        result = flat.copy()
+        result[:, t_start:t_end] = ablated
+        return result.reshape(original_shape)
+
+    freqs, _, Zxx = stft(
+        segment, fs=fs, window="hann",
+        nperseg=nperseg, noverlap=noverlap, nfft=nfft, axis=-1,
+    )
+    Zxx_masked = np.zeros_like(Zxx)
+    Zxx_masked[:, 0, :] = Zxx[:, 0, :]   # preserve DC
+
+    _, reconstructed = istft(
+        Zxx_masked, fs=fs, window="hann",
+        nperseg=nperseg, noverlap=noverlap, nfft=nfft,
+        time_axis=-1, freq_axis=-2,
+    )
+    seg_len = t_end - t_start
+    rec_len = reconstructed.shape[-1]
+    if rec_len >= seg_len:
+        reconstructed = reconstructed[:, :seg_len]
+    else:
+        reconstructed = np.pad(reconstructed, ((0,0),(0, seg_len-rec_len)), mode="edge")
+
+    result = flat.copy()
+    result[:, t_start:t_end] = reconstructed.astype(np.float32)
+    return result.reshape(original_shape)
+
+
+def run_phase3(
+    original_eeg: np.ndarray,
+    model,
+    eeg_projector,
+    projected_images,
+    correct_cols,
+    device,
+    baseline_metrics: dict,
+    output_dir: Path,
+) -> list:
+    """Run Phase 3: full-frequency masking for each time window."""
+    print("\n" + "="*60)
+    print("[Phase 3] Full-Frequency Window Masking")
+    print("  Design: zero ALL freq bins in ONE time window per run")
+    print("  Hypothesis: full_freq_T2 (152-300ms) -> largest drop")
+    print("="*60)
+
+    results_p3 = []
+    for cond in PHASE3_CONDITIONS:
+        name   = cond["name"]
+        tw_key = cond["time_window"]
+        tw_ms  = ""
+        if tw_key and tw_key in TIME_WINDOWS:
+            tw = TIME_WINDOWS[tw_key]
+            tw_ms = f" [{round(tw[0]/FS*1000)}-{round(tw[1]/FS*1000)}ms]"
+
+        print(f"  {name}{tw_ms} ...", end=" ", flush=True)
+
+        if tw_key is None:
+            ablated = original_eeg
+        else:
+            tw = TIME_WINDOWS[tw_key]
+            ablated = stft_mask_full_freq_window(original_eeg, tw)
+
+        feats   = encode_eeg(ablated, model, eeg_projector, device)
+        metrics = retrieval_metrics(feats, projected_images, correct_cols)
+
+        result = {
+            "name":        name,
+            "time_window": tw_key,
+            "time_ms":     tw_ms.strip("[] ") if tw_key else "—",
+            "top1":        metrics["top1"],
+            "top5":        metrics["top5"],
+            "mean_rank":   metrics["mean_rank"],
+            "median_rank": metrics["median_rank"],
+            "top1_drop":   None if name == "baseline" else round(baseline_metrics["top1"] - metrics["top1"], 4),
+            "top5_drop":   None if name == "baseline" else round(baseline_metrics["top5"] - metrics["top5"], 4),
+            "raw_preds":   metrics["raw_preds"],
+        }
+        results_p3.append(result)
+
+        drop_str = ""
+        if result["top1_drop"] is not None:
+            drop_str = f"  Delta_top1={result['top1_drop']:+.4f}  Delta_top5={result['top5_drop']:+.4f}"
+        print(f"Top-1={metrics['top1']:.4f}  Top-5={metrics['top5']:.4f}{drop_str}")
+
+    # Save CSV
+    csv_path = output_dir / "phase3_full_freq_masking_results.csv"
+    fieldnames = ["name","time_window","time_ms","top1","top5","mean_rank","median_rank","top1_drop","top5_drop"]
+    with csv_path.open("w", newline="", encoding="utf-8-sig") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(results_p3)
+    print(f"\nSaved Phase 3 CSV  -> {csv_path}")
+
+    # Save JSON
+    json_path = output_dir / "phase3_full_freq_masking_details.json"
+    with json_path.open("w", encoding="utf-8") as f:
+        json.dump({
+            "experiment":   "Phase 3: Full-Frequency STFT Masking per Time Window",
+            "description":  "Each run zeros ALL STFT bins in ONE time window, testing overall time-window importance",
+            "hypothesis":   "full_freq_T2 (152-300ms) should produce the largest accuracy drop",
+            "reference":    "Thorpe et al. (1996) Nature 381:520; Cichy et al. (2014) Nat Neurosci 17:455",
+            "time_windows": {k: {"samples": list(v), "ms": [round(v[0]/FS*1000), round(v[1]/FS*1000)]}
+                             for k, v in TIME_WINDOWS.items() if k != "T_full"},
+            "freq_bands_masked": "ALL (DC preserved to maintain signal mean)",
+            "baseline":     baseline_metrics,
+            "results":      results_p3,
+        }, f, ensure_ascii=False, indent=2)
+    print(f"Saved Phase 3 JSON -> {json_path}")
+
+    # Ranking summary
+    ranked = sorted([r for r in results_p3 if r["top1_drop"] is not None],
+                    key=lambda x: x["top1_drop"], reverse=True)
+    print("\n[Phase 3] Time Window Importance Ranking:")
+    print(f"  {'Condition':<22} {'Time':>10} {'DeltaTop-1':>12} {'DeltaTop-5':>12}")
+    print("  " + "-"*58)
+    for r in ranked:
+        bar = chr(9608) * max(0, int(r["top1_drop"] * 80))
+        print(f"  {r['name']:<22} {r['time_ms']:>10} {r['top1_drop']:>+12.4f} {r['top5_drop']:>+12.4f}  {bar}")
+
+    return results_p3
+
 
 def build_experiment_list(mode: str) -> list[dict]:
     """
@@ -579,7 +757,7 @@ def main() -> None:
         },
         "time_windows": {k: {"samples": list(v), "ms": [round(v[0]/FS*1000), round(v[1]/FS*1000)]}
                          for k, v in TIME_WINDOWS.items()},
-        "freq_bands":   FREQ_BANDS,
+        "freq_bands":   {k: list(v) for k, v in FREQ_BANDS.items()},
         "eeg_shape":    list(original_eeg.shape),
         "checkpoint":   str(args.checkpoint),
         "baseline":     baseline_metrics,
@@ -608,6 +786,15 @@ def main() -> None:
         bar = "█" * max(0, int(r["top1_drop"] * 100))
         print(f"  {r['name']:<35} {r['top1_drop']:>+10.4f} {r['top5_drop']:>+10.4f}  {bar}")
     print("="*60)
+    # =============================================================
+    # Phase 3: Full-Frequency Window Masking (auto-run after Phase 1)
+    # =============================================================
+    print("\n[INFO] Auto-running Phase 3 (full-freq window masking)...")
+    p3_output = args.output_dir.parent / "phase3_full_freq_masking"
+    p3_output.mkdir(parents=True, exist_ok=True)
+    run_phase3(original_eeg, model, eeg_projector, projected_images,
+               correct_cols, device, baseline_metrics, p3_output)
+
     print("\n[OK] Phase 1 STFT Ablation complete.")
     print(f"   Results: {args.output_dir}")
     print(f"   Next step: Run ablation_temporal_amplitude.py --top-conditions <name1> <name2> <name3>")

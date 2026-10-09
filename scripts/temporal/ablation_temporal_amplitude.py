@@ -35,7 +35,8 @@ from __future__ import annotations
 import os
 import sys
 from pathlib import Path
-sys.path.append(r"D:\NEOschool\eegtoimage\NeuroBridge-main")
+REPO_ROOT = Path(__file__).resolve().parent.parents[1]
+sys.path.insert(0, str(REPO_ROOT))
 
 import argparse
 import csv
@@ -79,7 +80,7 @@ if TYPE_CHECKING:
 # ===========================================================================
 
 SCRIPT_DIR   = Path(__file__).resolve().parent
-DEFAULT_DATA  = Path(r"D:\NEOschool\eegtoimage\NeuroBridge-main\data")
+DEFAULT_DATA  = REPO_ROOT / "data"
 FS           = 250.0
 
 SELECTED_CHANNELS = [
@@ -513,7 +514,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--checkpoint", type=Path,
-        default=Path(r"D:\NEOschool\eegtoimage\NeuroBridge-main\intra-subjects_sub-08_checkpoint_last.pth"),
+        default=REPO_ROOT / "checkpoints" / "intra-subjects_sub-08_checkpoint_last.pth",
+        help="Path to the pretrained checkpoint (place it under <repo>/checkpoints/ or override via CLI).",
     )
     parser.add_argument(
         "--eeg-data-dir", type=Path,
@@ -564,6 +566,12 @@ def main() -> None:
     print(f"  EEG shape: {original_eeg.shape}")
 
     # 加载模型
+    if not args.checkpoint.is_file():
+        raise FileNotFoundError(
+            f"Checkpoint not found: {args.checkpoint}\n"
+            "Place the pretrained checkpoint at <repo>/checkpoints/ "
+            "(see README) or pass --checkpoint <path>."
+        )
     print("Loading NeuroBridge model (frozen)...")
     model, eeg_proj, img_proj = load_models(args.checkpoint, raw_img_feats.shape[-1], device)
     with torch.inference_mode():

@@ -1,0 +1,32 @@
+# Dependencies for the temporal ablation pipeline in this mirror
+# (scripts/temporal/ + module/).
+#
+# All versions below were read from the conda environment that produced and
+# verified the committed results: env "neurobridge", Python 3.12.2,
+# PyTorch 2.7.0+cu128 (CUDA 12.8). CPU-only PyTorch builds also work for
+# Tier 2 inference.
+
+# ---------------------------------------------------------------------------
+# Tier 1 — read-only layer: statistics / plotting / audit over committed CSVs
+# ---------------------------------------------------------------------------
+numpy>=2.5            # tested with 2.5.1
+scipy>=1.18           # tested with 1.18.0
+pandas>=2.2           # tested with 2.2.3
+matplotlib>=3.10      # tested with 3.10.0
+statsmodels>=0.14     # tested with 0.14.6 (McNemar exact test + BH-FDR)
+
+# ---------------------------------------------------------------------------
+# Tier 2 — inference layer: STFT / amplitude / generalization ablations
+# ---------------------------------------------------------------------------
+torch>=2.7            # tested with 2.7.0+cu128
+einops>=0.8           # tested with 0.8.1
+tqdm>=4.67            # tested with 4.67.1
+reformer-pytorch>=1.4 # tested with 1.4.4 (module/eeg_encoder/atm/subject_layers/SelfAttention_Family.py)
+sympy>=1.14           # tested with 1.14.0 (module/eeg_encoder/atm/subject_layers/MultiWaveletCorrelation.py)
+
+# Notes
+# - h5py is deliberately absent: no script in this repository imports h5py.
+# - EEG preprocessing and image-feature extraction in
+#   "scripts/original scripts of NeuroBridge/" additionally need mne,
+#   scikit-learn, open_clip_torch, torchvision and transformers; see the
+#   upstream requirements.txt shipped in that directory.
