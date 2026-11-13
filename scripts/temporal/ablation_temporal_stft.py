@@ -22,7 +22,6 @@ ablation_temporal_stft.py — Phase 1: STFT Time-Frequency Masking Ablation
   python ablation_temporal_stft.py --mode priority   # 只跑优先级★5/★4
   python ablation_temporal_stft.py --mode full        # 跑全部组合
 
-作者：乔钰成 / NEOschool 项目组
 版本：1.0
 """
 
