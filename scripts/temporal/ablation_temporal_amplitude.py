@@ -26,7 +26,6 @@ ablation_temporal_amplitude.py — Phase 2: Amplitude Perturbation Ablation
   # 只跑振幅缩放
   python ablation_temporal_amplitude.py --types scaling
 
-作者：乔钰成 / NEOschool 项目组
 版本：1.0
 """
 
