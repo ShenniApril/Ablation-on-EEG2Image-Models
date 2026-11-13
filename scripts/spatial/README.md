@@ -61,10 +61,10 @@ python microstate_clustering_reference.py `
 
 ### 模板聚类结果评价
 
-(neurobridge) PS D:\shenni\交大\论文\EEG2Image\NeuroBridge> python -c "import numpy as np; p=r'results/k4_t10000_peak10_seg10_init50_seed2025/test_microstate_features.npz'; f=np.load(p); c=f['coverage'].reshape(-1,4); print('mean coverage:',c.mean(0)); print('median:',np.median(c,0)); print('trial presence:',(c>0).mean(0)); print('sum:',c.mean(0).sum())"
+python -c "import numpy as np; p=r'results/k4_t10000_peak10_seg10_init50_seed2025/test_microstate_features.npz'; f=np.load(p); c=f['coverage'].reshape(-1,4); print('mean coverage:',c.mean(0)); print('median:',np.median(c,0)); print('trial presence:',(c>0).mean(0)); print('sum:',c.mean(0).sum())"
 
 ### 绘图
-(neurobridge) PS D:\shenni\交大\论文\EEG2Image\NeuroBridge> python plot_microstate_topographies.py ` 
+python plot_microstate_topographies.py ` 
    --templates "results\microstate_parameter_search_k4\k4_trials5000_peaks12_distance10ms_segment10ms_init50_seed2025\microstate_templates.npy" `         
    --info "data\things_eeg\preprocessed_eeg_no_mvnn\info.json" `                                   
    --output "results\microstate_sub08_no_mvnn_k4_new\microstate_topographies.png"
