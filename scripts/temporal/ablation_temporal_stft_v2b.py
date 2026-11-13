@@ -22,7 +22,6 @@ ablation_temporal_stft.py — Phase 1: STFT Time-Frequency Masking Ablation
   python ablation_temporal_stft.py --mode priority   # 只跑优先级★5/★4
   python ablation_temporal_stft.py --mode full        # 跑全部组合
 
-作者：乔钰成 / NEOschool 项目组
 版本：2.0-B  (三档 Gamma: low_gamma 30-45Hz / gamma 45-70Hz / high_gamma 70-100Hz + Phase 3)
 """
 
