@@ -1,0 +1,263 @@
+"""
+Fourier-mask zero 7 EEG bands for one or more THINGS-EEG subjects.
+
+Output layout (same as sub-01 / sub-08):
+  data/things_eeg/sub-XX-zero-bands/sub-XX-<band>/{train,test}.npy
+
+  band folders:
+    sub-XX-delta, sub-XX-theta, sub-XX-alpha, sub-XX-beta,
+    sub-XX-low-gamma, sub-XX-gamma, sub-XX-high-gamma
+
+Band zeroing is deterministic (no RNG). --seed / --checkpoint_path are
+only recorded in meta.json for downstream eval.
+
+Run from repo root:
+  conda activate neurobridge
+  cd d:\\git\\NeuroBridge
+  $env:PYTHONPATH = "."
+  python scripts/zero_bands_subjects --sub_ids 2 3 4 5 6 7 9 10
+  python scripts/zero_bands_subjects --sub_ids 2 --splits test
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+from typing import Iterable
+
+import numpy as np
+
+_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+EEG_BANDS: dict[str, tuple[float, float]] = {
+    "delta": (0.5, 4.0),
+    "theta": (4.0, 8.0),
+    "alpha": (8.0, 13.0),
+    "beta": (13.0, 30.0),
+    "low_gamma": (30.0, 45.0),
+    "gamma": (45.0, 70.0),
+    "high_gamma": (70.0, 100.0),
+}
+
+BAND_NAMES = list(EEG_BANDS.keys())
+
+BAND_FOLDER_SUFFIX = {
+    "delta": "delta",
+    "theta": "theta",
+    "alpha": "alpha",
+    "beta": "beta",
+    "low_gamma": "low-gamma",
+    "gamma": "gamma",
+    "high_gamma": "high-gamma",
+}
+
+
+def zero_dir_name(sub_id: int, band: str) -> str:
+    return f"sub-{sub_id:02d}-{BAND_FOLDER_SUFFIX[band]}"
+
+
+def default_checkpoint(sub_id: int, seed: int) -> str:
+    path = os.path.join(
+        _REPO_ROOT,
+        "data",
+        "checkpoints",
+        f"sub-{sub_id:02d}",
+        f"intra-subjects_sub-{sub_id:02d}_seed{seed}_checkpoint_test_best.pth",
+    )
+    if os.path.isfile(path):
+        return path
+    # fall back to any seed42 / seed3407 under that subject folder
+    ckpt_dir = os.path.join(_REPO_ROOT, "data", "checkpoints", f"sub-{sub_id:02d}")
+    if os.path.isdir(ckpt_dir):
+        for name in sorted(os.listdir(ckpt_dir)):
+            if name.endswith(".pth"):
+                return os.path.join(ckpt_dir, name)
+    return path
+
+
+def fourier_mask_zero(
+    x: np.ndarray,
+    sfreq: float,
+    band_names: Iterable[str],
+) -> np.ndarray:
+    names = [n.lower().strip().replace("-", "_") for n in band_names]
+    for name in names:
+        if name not in EEG_BANDS:
+            raise ValueError(f"Unknown band '{name}'. Choose from: {BAND_NAMES}")
+
+    x = np.asarray(x, dtype=np.float64)
+    spectrum = np.fft.rfft(x, axis=-1)
+    freqs = np.fft.rfftfreq(x.shape[-1], d=1.0 / sfreq)
+
+    mask = np.zeros_like(freqs, dtype=bool)
+    for name in names:
+        f_lo, f_hi = EEG_BANDS[name]
+        mask |= (freqs >= f_lo) & (freqs < f_hi)
+
+    spectrum[..., mask] = 0.0
+    return np.fft.irfft(spectrum, n=x.shape[-1], axis=-1)
+
+
+def process_split_chunked(
+    input_path: str,
+    output_path: str,
+    sfreq: float,
+    band_name: str,
+    chunk_size: int,
+) -> dict:
+    print(f"  in : {input_path}")
+    data = np.load(input_path, mmap_mode="r")
+    n0 = data.shape[0]
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    tmp_path = output_path + ".tmp.npy"
+    out_mm = np.lib.format.open_memmap(
+        tmp_path, mode="w+", dtype=data.dtype, shape=data.shape
+    )
+    try:
+        for start in range(0, n0, chunk_size):
+            end = min(start + chunk_size, n0)
+            filtered = fourier_mask_zero(
+                data[start:end], sfreq=sfreq, band_names=[band_name]
+            )
+            out_mm[start:end] = filtered.astype(data.dtype, copy=False)
+            print(f"    {band_name}: rows {start}:{end}/{n0}")
+        out_mm.flush()
+    finally:
+        del out_mm
+    os.replace(tmp_path, output_path)
+    print(f"  out: {output_path}  shape={list(data.shape)}")
+    return {"shape": list(data.shape), "file": output_path}
+
+
+def process_subject(args, sub_id: int) -> None:
+    sub = f"sub-{sub_id:02d}"
+    sub_in = os.path.join(args.input_dir, sub)
+    if not os.path.isdir(sub_in):
+        print(f"SKIP missing subject dir: {sub_in}")
+        return
+
+    output_root = os.path.join(args.output_base, f"{sub}-zero-bands")
+    if (
+        args.skip_existing
+        and os.path.isdir(output_root)
+        and all(
+            os.path.isfile(
+                os.path.join(output_root, zero_dir_name(sub_id, b), "test.npy")
+            )
+            for b in args.bands
+        )
+    ):
+        print(f"SKIP {sub}: already has {output_root}")
+        return
+
+    ckpt = args.checkpoint_path or default_checkpoint(sub_id, args.seed)
+    os.makedirs(output_root, exist_ok=True)
+
+    print(f"\n########## {sub} ##########")
+    print(f"method  : fourier_mask (deterministic; seed only logged)")
+    print(f"sfreq   : {args.sfreq}")
+    print(f"bands   : {args.bands}")
+    print(f"seed    : {args.seed}")
+    print(f"ckpt    : {ckpt}")
+    print(f"input   : {sub_in}")
+    print(f"output  : {output_root}")
+
+    meta = {
+        "subject": sub,
+        "method": "rFFT → zero band bins → irFFT (same as sub-01/sub-08)",
+        "sfreq": args.sfreq,
+        "seed": args.seed,
+        "checkpoint_path": os.path.abspath(ckpt),
+        "checkpoint_note": (
+            "Weights are for downstream EEG-to-image evaluation only; "
+            "band zeroing does not load the checkpoint."
+        ),
+        "band_definitions_hz": {k: list(v) for k, v in EEG_BANDS.items()},
+        "naming": f"{sub}-<band> with low_gamma→low-gamma, high_gamma→high-gamma",
+        "bands": {},
+    }
+
+    for band in args.bands:
+        zname = zero_dir_name(sub_id, band)
+        out_dir = os.path.join(output_root, zname)
+        print(f"\n===== {zname} =====")
+        band_meta = {"hz": list(EEG_BANDS[band]), "dir": out_dir, "splits": {}}
+        for split in args.splits:
+            in_path = os.path.join(sub_in, f"{split}.npy")
+            if not os.path.isfile(in_path):
+                print(f"  SKIP missing {in_path}")
+                continue
+            out_path = os.path.join(out_dir, f"{split}.npy")
+            if args.skip_existing and os.path.isfile(out_path):
+                print(f"  SKIP existing {out_path}")
+                band_meta["splits"][split] = {
+                    "shape": list(np.load(out_path, mmap_mode="r").shape),
+                    "file": out_path,
+                    "skipped_existing": True,
+                }
+                continue
+            chunk = args.chunk_size if split == "train" else max(args.chunk_size, 200)
+            band_meta["splits"][split] = process_split_chunked(
+                in_path, out_path, args.sfreq, band, chunk
+            )
+        meta["bands"][band] = band_meta
+
+    meta_path = os.path.join(output_root, "meta.json")
+    with open(meta_path, "w", encoding="utf-8") as f:
+        json.dump(meta, f, indent=2, ensure_ascii=False)
+    print(f"\nSaved {meta_path}")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Fourier-mask band zeroing → data/things_eeg/sub-XX-zero-bands/"
+    )
+    parser.add_argument(
+        "--sub_ids",
+        nargs="+",
+        type=int,
+        default=[2, 3, 4, 5, 6, 7, 9, 10],
+        help="subjects to process (default: remaining without full 7-band zeroing)",
+    )
+    parser.add_argument(
+        "--input_dir",
+        default=os.path.join(_REPO_ROOT, "data", "things_eeg", "preprocessed_eeg"),
+    )
+    parser.add_argument(
+        "--output_base",
+        default=os.path.join(_REPO_ROOT, "data", "things_eeg"),
+        help="writes <output_base>/sub-XX-zero-bands/...",
+    )
+    parser.add_argument("--bands", nargs="+", default=BAND_NAMES, choices=BAND_NAMES)
+    parser.add_argument(
+        "--splits",
+        nargs="+",
+        default=["test", "train"],
+        choices=["train", "test"],
+    )
+    parser.add_argument("--sfreq", type=float, default=250.0)
+    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--checkpoint_path",
+        default=None,
+        help="optional fixed ckpt path recorded in each meta (default: per-subject)",
+    )
+    parser.add_argument("--chunk_size", type=int, default=100)
+    parser.add_argument(
+        "--skip_existing",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="skip subjects/files that already exist (default: true)",
+    )
+    args = parser.parse_args()
+
+    print(f"subjects: {args.sub_ids}")
+    print(f"output_base: {args.output_base}")
+    for sub_id in args.sub_ids:
+        process_subject(args, sub_id)
+    print("\nAll done.")
+
+
+if __name__ == "__main__":
+    main()

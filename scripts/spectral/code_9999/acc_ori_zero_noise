@@ -1,0 +1,533 @@
+"""
+Compare Top-1 / Top-5 (EEG-to-image):
+  original  vs  band-zeroed  vs  zeroed+power-matched Gaussian noise (replace).
+
+Uses staging dirs (hardlinks) so EEGPreImageDataset sees:
+  <eeg_dir>/info.json
+  <eeg_dir>/sub-XX/test.npy
+
+Run from repo root:
+  conda activate neurobridge
+  cd d:\\git\\NeuroBridge
+  $env:PYTHONPATH = "."
+  python data/acc_ori_zero_noise                  # default: sub-01, seed42 ckpt
+  python data/acc_ori_zero_noise --sub_id 8 --seed 2025 \\
+      --checkpoint_path data/intra-subjects_sub-08_checkpoint_last.pth \\
+      --zero_bands_root data/things_eeg/sub-08-zero-bands
+"""
+
+from __future__ import annotations
+
+import argparse
+import csv
+import gc
+import os
+import shutil
+import sys
+
+import matplotlib.pyplot as plt
+import numpy as np
+import torch
+from torch.utils.data import DataLoader
+
+_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+
+from module.dataset import EEGPreImageDataset
+from module.eeg_encoder.model import EEGProject, TSConv, EEGNet, EEGTransformer
+from module.projector import ProjectorLinear
+from module.util import retrieve_all
+
+BANDS = [
+    "delta",
+    "theta",
+    "alpha",
+    "beta",
+    "low_gamma",
+    "gamma",
+    "high_gamma",
+]
+
+BAND_FOLDER_SUFFIX = {
+    "delta": "delta",
+    "theta": "theta",
+    "alpha": "alpha",
+    "beta": "beta",
+    "low_gamma": "low-gamma",
+    "gamma": "gamma",
+    "high_gamma": "high-gamma",
+}
+
+
+def zero_folder(sub_id: int, band: str) -> str:
+    return f"sub-{sub_id:02d}-{BAND_FOLDER_SUFFIX[band]}"
+
+DEFAULT_CHANNELS = [
+    "P7", "P5", "P3", "P1", "Pz", "P2", "P4", "P6", "P8",
+    "PO7", "PO3", "POz", "PO4", "PO8", "O1", "Oz", "O2",
+]
+
+
+def set_seed(seed: int) -> None:
+    import random
+
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+
+
+def hardlink_or_copy(src: str, dst: str) -> None:
+    os.makedirs(os.path.dirname(dst), exist_ok=True)
+    if os.path.isfile(dst) or os.path.islink(dst):
+        os.remove(dst)
+    try:
+        os.link(src, dst)
+    except OSError:
+        shutil.copy2(src, dst)
+
+
+def stage_flat_test(
+    test_npy: str,
+    staging_root: str,
+    name: str,
+    info_src: str,
+    sub_id: int,
+) -> str:
+    """Build dataset root with info.json + sub-XX/test.npy from a flat test.npy."""
+    root = os.path.join(staging_root, name)
+    sub_dir = os.path.join(root, f"sub-{sub_id:02d}")
+    os.makedirs(sub_dir, exist_ok=True)
+    shutil.copy2(info_src, os.path.join(root, "info.json"))
+    hardlink_or_copy(test_npy, os.path.join(sub_dir, "test.npy"))
+    return root
+
+
+def resolve_zero_test(band: str, args) -> str | None:
+    """Prefer sub-XX-zero-bands; fall back to preprocessed_eeg_zero_*_fourier."""
+    flat = os.path.join(
+        args.zero_bands_root, zero_folder(args.sub_id, band), "test.npy"
+    )
+    if os.path.isfile(flat):
+        return flat
+    fourier = os.path.join(
+        args.zero_fourier_root,
+        f"preprocessed_eeg_zero_{band}_fourier",
+        f"sub-{args.sub_id:02d}",
+        "test.npy",
+    )
+    if os.path.isfile(fourier):
+        return fourier
+    return None
+
+
+def build_encoder(encoder_type: str, latent_dim: int, n_times: int, n_ch: int):
+    kwargs = dict(
+        feature_dim=latent_dim,
+        eeg_sample_points=n_times,
+        channels_num=n_ch,
+    )
+    if encoder_type == "EEGProject":
+        return EEGProject(**kwargs)
+    if encoder_type == "TSConv":
+        return TSConv(**kwargs)
+    if encoder_type == "EEGNet":
+        return EEGNet(**kwargs)
+    if encoder_type == "EEGTransformer":
+        return EEGTransformer(**kwargs)
+    raise ValueError(f"unsupported eeg_encoder_type: {encoder_type}")
+
+
+def load_model(
+    checkpoint_path: str,
+    latent_dim: int,
+    n_times: int,
+    n_ch: int,
+    feature_dim: int,
+    device,
+    encoder_type: str = "EEGProject",
+):
+    model = build_encoder(encoder_type, latent_dim, n_times, n_ch).to(device)
+    eeg_projector = ProjectorLinear(latent_dim, feature_dim).to(device)
+    img_projector = ProjectorLinear(latent_dim, feature_dim).to(device)
+
+    ckpt = torch.load(checkpoint_path, map_location=device, weights_only=False)
+    model.load_state_dict(ckpt["model_state_dict"])
+    eeg_projector.load_state_dict(ckpt["eeg_projector_state_dict"])
+    img_projector.load_state_dict(ckpt["img_projector_state_dict"])
+
+    model.eval()
+    eeg_projector.eval()
+    img_projector.eval()
+    return model, eeg_projector, img_projector
+
+
+@torch.no_grad()
+def evaluate_eeg_dir(eeg_data_dir: str, args, device: torch.device) -> dict[str, float]:
+    use_img_aug = bool(args.image_test_aug)
+    dataset = EEGPreImageDataset(
+        subject_ids=[args.sub_id],
+        eeg_data_dir=eeg_data_dir,
+        selected_channels=args.selected_channels,
+        time_window=args.time_window,
+        image_feature_dir=args.image_feature_dir,
+        text_feature_dir=args.text_feature_dir,
+        image_aug=use_img_aug,
+        aug_image_feature_dirs=args.aug_image_feature_dirs if use_img_aug else [],
+        average=True,
+        _random=False,
+        eeg_transform=None,
+        train=False,
+        image_test_aug=use_img_aug,
+        eeg_test_aug=False,
+        frozen_eeg_prior=False,
+    )
+    loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False)
+
+    latent_dim = dataset.image_features.shape[-1]
+    n_ch = len(args.selected_channels) if args.selected_channels else dataset.channels_num
+    n_times = args.time_window[1] - args.time_window[0]
+
+    model, eeg_proj, img_proj = load_model(
+        args.checkpoint_path,
+        latent_dim,
+        n_times,
+        n_ch,
+        args.feature_dim,
+        device,
+        encoder_type=args.eeg_encoder_type,
+    )
+
+    eeg_list, img_list = [], []
+    for batch in loader:
+        eeg = batch[0].to(device)
+        img = batch[1].to(device)
+        eeg_feat = eeg_proj(model(eeg))
+        img_feat = img_proj(img)
+        if args.img_l2norm:
+            img_feat = torch.nn.functional.normalize(img_feat, p=2, dim=1)
+        if args.eeg_l2norm:
+            eeg_feat = torch.nn.functional.normalize(eeg_feat, p=2, dim=1)
+        eeg_list.append(eeg_feat.cpu().numpy())
+        img_list.append(img_feat.cpu().numpy())
+
+    eeg_all = np.concatenate(eeg_list, axis=0)
+    img_all = np.concatenate(img_list, axis=0)
+    top5_count, top1_count, total = retrieve_all(eeg_all, img_all, average=True)
+
+    out = {
+        "top1": top1_count / total * 100.0,
+        "top5": top5_count / total * 100.0,
+        "n": float(total),
+    }
+    # Free peak RAM before next band (important for inter / all-channels ~1GB EEG)
+    del model, eeg_proj, img_proj, dataset, loader, eeg_list, img_list, eeg_all, img_all
+    gc.collect()
+    return out
+
+
+def plot_grouped(rows: list[dict], ori_top1: float, ori_top5: float, out_path: str, sub_id: int) -> None:
+    """Grouped bars per band: zero vs noise; dashed line = original."""
+    bands = []
+    seen = set()
+    for r in rows:
+        if r["band"] and r["band"] not in seen:
+            bands.append(r["band"])
+            seen.add(r["band"])
+
+    zero_t1, noise_t1, zero_t5, noise_t5 = [], [], [], []
+    for b in bands:
+        z = next((r for r in rows if r["condition"] == f"zero_{b}"), None)
+        n = next((r for r in rows if r["condition"] == f"noise_{b}"), None)
+        zero_t1.append(z["top1"] if z else np.nan)
+        noise_t1.append(n["top1"] if n else np.nan)
+        zero_t5.append(z["top5"] if z else np.nan)
+        noise_t5.append(n["top5"] if n else np.nan)
+
+    x = np.arange(len(bands))
+    width = 0.2
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5.5), sharey=False)
+
+    for ax, zvals, nvals, ylabel, title, ori in (
+        (axes[0], zero_t1, noise_t1, "Top-1 Acc (%)", "Top-1", ori_top1),
+        (axes[1], zero_t5, noise_t5, "Top-5 Acc (%)", "Top-5", ori_top5),
+    ):
+        b0 = ax.bar(x - width / 2, zvals, width, label="zero band", color="#4C72B0")
+        b1 = ax.bar(x + width / 2, nvals, width, label="noise replace", color="#C44E52")
+        ax.axhline(ori, color="#55A868", linestyle="--", linewidth=1.5, label=f"original ({ori:.1f})")
+        ax.set_ylabel(ylabel)
+        ax.set_title(title)
+        ax.set_xticks(x)
+        ax.set_xticklabels(bands, rotation=25, ha="right")
+        ax.legend(fontsize=8)
+        ymax = np.nanmax([*zvals, *nvals, ori])
+        ax.set_ylim(0, ymax * 1.2 + 1)
+        for bars in (b0, b1):
+            for bar in bars:
+                v = bar.get_height()
+                if np.isfinite(v):
+                    ax.annotate(
+                        f"{v:.1f}",
+                        xy=(bar.get_x() + bar.get_width() / 2, v),
+                        xytext=(0, 3),
+                        textcoords="offset points",
+                        ha="center",
+                        fontsize=7,
+                    )
+
+    fig.suptitle(f"sub-{sub_id:02d}: original vs zero vs noise-replaced (EEG-to-image)")
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+    print(f"Saved figure: {out_path}")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="original vs zero vs noise-replaced Top-1/Top-5 (EEG-to-image)"
+    )
+    parser.add_argument("--sub_id", type=int, default=1)
+    parser.add_argument(
+        "--checkpoint_path",
+        default=None,
+        help="default: sub-01 seed42 test_best checkpoint",
+    )
+    parser.add_argument(
+        "--eeg_ori_dir",
+        default=os.path.join(_REPO_ROOT, "data", "things_eeg", "preprocessed_eeg"),
+    )
+    parser.add_argument(
+        "--zero_bands_root",
+        default=None,
+        help="default: data/things_eeg/sub-XX-zero-bands",
+    )
+    parser.add_argument(
+        "--zero_fourier_root",
+        default=os.path.join(_REPO_ROOT, "data", "things_eeg"),
+    )
+    parser.add_argument(
+        "--noise_root",
+        default=os.path.join(_REPO_ROOT, "data", "gaussian-noise_out"),
+        help="contains sub-XX/<band>/test.npy",
+    )
+    parser.add_argument("--bands", nargs="+", default=BANDS, choices=BANDS)
+    parser.add_argument(
+        "--image_feature_dir",
+        default=os.path.join(_REPO_ROOT, "data", "things_eeg", "image_feature", "RN50"),
+    )
+    parser.add_argument(
+        "--aug_image_feature_dirs",
+        nargs="+",
+        default=[
+            os.path.join(
+                _REPO_ROOT,
+                "data",
+                "things_eeg",
+                "image_feature",
+                "RN50",
+                "GaussianBlur-GaussianNoise-LowResolution-Mosaic",
+            )
+        ],
+    )
+    parser.add_argument(
+        "--image_test_aug",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+    )
+    parser.add_argument("--img_l2norm", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--eeg_l2norm", action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=42,
+        help="eval RNG seed (default 42 for sub-01)",
+    )
+    parser.add_argument("--text_feature_dir", default="")
+    parser.add_argument("--feature_dim", type=int, default=512)
+    parser.add_argument(
+        "--eeg_encoder_type",
+        default="EEGProject",
+        choices=["EEGProject", "TSConv", "EEGNet", "EEGTransformer"],
+        help="must match the checkpoint (intra=EEGProject, inter=TSConv)",
+    )
+    parser.add_argument(
+        "--selected_channels",
+        nargs="+",
+        default=DEFAULT_CHANNELS,
+        help="channel list (default: 17 O+P for intra)",
+    )
+    parser.add_argument(
+        "--all_channels",
+        action="store_true",
+        help="use all EEG channels (inter protocol; overrides --selected_channels)",
+    )
+    parser.add_argument("--time_window", nargs=2, type=int, default=[0, 250])
+    parser.add_argument("--batch_size", type=int, default=200)
+    parser.add_argument("--device", default="cpu")
+    parser.add_argument(
+        "--out_dir",
+        default=os.path.join(_REPO_ROOT, "data", "acc_ori_zero_noise_results"),
+    )
+    parser.add_argument(
+        "--staging_dir",
+        default=os.path.join(_REPO_ROOT, "data", "acc_ori_zero_noise_staging"),
+    )
+    parser.add_argument(
+        "--skip_original",
+        action="store_true",
+        help="reuse previous original acc if --ori_top1/--ori_top5 given",
+    )
+    parser.add_argument("--ori_top1", type=float, default=None)
+    parser.add_argument("--ori_top5", type=float, default=None)
+    args = parser.parse_args()
+
+    if args.all_channels:
+        args.selected_channels = []
+
+    if args.checkpoint_path is None:
+        args.checkpoint_path = os.path.join(
+            _REPO_ROOT,
+            "data",
+            "checkpoints",
+            f"sub-{args.sub_id:02d}",
+            f"intra-subjects_sub-{args.sub_id:02d}_seed{args.seed}_checkpoint_test_best.pth",
+        )
+        if not os.path.isfile(args.checkpoint_path) and args.sub_id == 8:
+            args.checkpoint_path = os.path.join(
+                _REPO_ROOT, "data", "intra-subjects_sub-08_checkpoint_last.pth"
+            )
+    if args.zero_bands_root is None:
+        args.zero_bands_root = os.path.join(
+            _REPO_ROOT,
+            "data",
+            "things_eeg",
+            f"sub-{args.sub_id:02d}-zero-bands",
+        )
+
+    set_seed(args.seed)
+    print(f"sub={args.sub_id:02d}  seed={args.seed}")
+    print(f"ckpt={args.checkpoint_path}")
+    print(f"encoder={args.eeg_encoder_type}")
+    ch_desc = (
+        f"{len(args.selected_channels)} channels"
+        if args.selected_channels
+        else "all channels"
+    )
+    print(f"channels={ch_desc}")
+    print(f"image_test_aug={args.image_test_aug}  img_l2norm={args.img_l2norm}")
+
+    if not os.path.isfile(args.checkpoint_path):
+        raise FileNotFoundError(args.checkpoint_path)
+    info_src = os.path.join(args.eeg_ori_dir, "info.json")
+    if not os.path.isfile(info_src):
+        raise FileNotFoundError(info_src)
+
+    if args.device.startswith("cuda") and torch.cuda.is_available():
+        try:
+            torch.zeros(1, device=args.device)
+            device = torch.device(args.device)
+        except RuntimeError as e:
+            print(f"CUDA not usable ({e}); falling back to CPU.")
+            device = torch.device("cpu")
+    else:
+        device = torch.device("cpu")
+    print(f"Device: {device}")
+    os.makedirs(args.out_dir, exist_ok=True)
+    os.makedirs(args.staging_dir, exist_ok=True)
+
+    rows: list[dict] = []
+
+    if args.skip_original and args.ori_top1 is not None and args.ori_top5 is not None:
+        print(f"\n>>> Original EEG (cached) Top-1={args.ori_top1:.2f}% Top-5={args.ori_top5:.2f}%")
+        rows.append(
+            {
+                "condition": "original",
+                "band": "",
+                "top1": args.ori_top1,
+                "top5": args.ori_top5,
+                "n": 200.0,
+            }
+        )
+    else:
+        print("\n>>> Original EEG")
+        acc = evaluate_eeg_dir(args.eeg_ori_dir, args, device)
+        print(f"  Top-1={acc['top1']:.2f}%  Top-5={acc['top5']:.2f}%  n={int(acc['n'])}")
+        rows.append({"condition": "original", "band": "", **acc})
+
+    ori = rows[0]
+
+    for band in args.bands:
+        print(f"\n===== band={band} =====")
+
+        zpath = resolve_zero_test(band, args)
+        if zpath is None:
+            print("  SKIP zero: missing test.npy")
+        else:
+            zdir = stage_flat_test(
+                zpath, args.staging_dir, f"zero_{band}", info_src, args.sub_id
+            )
+            print(f"  zero src: {zpath}")
+            acc = evaluate_eeg_dir(zdir, args, device)
+            print(
+                f"  zero  Top-1={acc['top1']:.2f}%  Top-5={acc['top5']:.2f}%  "
+                f"Δtop1={acc['top1'] - ori['top1']:+.2f}"
+            )
+            rows.append({"condition": f"zero_{band}", "band": band, **acc})
+
+        npath = os.path.join(
+            args.noise_root, f"sub-{args.sub_id:02d}", band, "test.npy"
+        )
+        if not os.path.isfile(npath):
+            print(f"  SKIP noise: missing {npath}")
+        else:
+            ndir = stage_flat_test(
+                npath, args.staging_dir, f"noise_{band}", info_src, args.sub_id
+            )
+            print(f"  noise src: {npath}")
+            acc = evaluate_eeg_dir(ndir, args, device)
+            print(
+                f"  noise Top-1={acc['top1']:.2f}%  Top-5={acc['top5']:.2f}%  "
+                f"Δtop1={acc['top1'] - ori['top1']:+.2f}"
+            )
+            rows.append({"condition": f"noise_{band}", "band": band, **acc})
+
+    csv_path = os.path.join(
+        args.out_dir, f"sub-{args.sub_id:02d}_ori_zero_noise_acc.csv"
+    )
+    with open(csv_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(
+            f,
+            fieldnames=[
+                "condition",
+                "band",
+                "top1",
+                "top5",
+                "n",
+                "delta_top1",
+                "delta_top5",
+            ],
+        )
+        writer.writeheader()
+        for r in rows:
+            writer.writerow(
+                {
+                    "condition": r["condition"],
+                    "band": r["band"],
+                    "top1": f"{r['top1']:.4f}",
+                    "top5": f"{r['top5']:.4f}",
+                    "n": int(r["n"]),
+                    "delta_top1": f"{r['top1'] - ori['top1']:+.4f}",
+                    "delta_top5": f"{r['top5'] - ori['top5']:+.4f}",
+                }
+            )
+    print(f"\nSaved CSV: {csv_path}")
+
+    fig_path = os.path.join(
+        args.out_dir, f"sub-{args.sub_id:02d}_ori_zero_noise_acc.png"
+    )
+    plot_grouped(rows, ori["top1"], ori["top5"], fig_path, args.sub_id)
+    print("\nDone.")
+
+
+if __name__ == "__main__":
+    main()

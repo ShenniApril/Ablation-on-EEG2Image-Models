@@ -1,0 +1,13 @@
+"""Wrapper: canonical name expected by gaussian-noise / continue_gauss_train."""
+from __future__ import annotations
+
+import os
+import runpy
+import sys
+
+_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+_TARGET = os.path.join(_REPO_ROOT, "data", "amplitude_and_phase_original")
+
+if __name__ == "__main__":
+    sys.argv[0] = _TARGET
+    runpy.run_path(_TARGET, run_name="__main__")

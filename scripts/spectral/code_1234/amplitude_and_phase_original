@@ -1,0 +1,243 @@
+"""
+Extract amplitude & phase of 7 EEG bands from original (non-zeroed) THINGS-EEG.
+
+Used by data/gaussian-noise so injected noise matches pre-zeroing power /
+amplitude / phase statistics.
+
+Input:  data/things_eeg/preprocessed_eeg/sub-XX/{train,test}.npy
+Output: data/amplitude&phase(orignal)_out/sub-XX/
+
+For each split and band, saves:
+  {band}_amplitude.npy   float32, shape (..., n_bins_in_band)
+  {band}_phase.npy       float32 radians, same shape
+  {band}_freqs_hz.npy    1D frequency centers of those bins
+  meta.json
+
+Bands (Hz):
+  delta 0.5–4, theta 4–8, alpha 8–13, beta 13–30,
+  low_gamma 30–45, gamma 45–70, high_gamma 70–100
+
+Run from repo root:
+  conda activate neurobridge
+  cd d:\\git\\NeuroBridge
+  python "data/amplitude&phase(orignal)" --sub_id 1
+  python "data/amplitude&phase(orignal)" --sub_id 8
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+
+import numpy as np
+
+_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+EEG_BANDS: dict[str, tuple[float, float]] = {
+    "delta": (0.5, 4.0),
+    "theta": (4.0, 8.0),
+    "alpha": (8.0, 13.0),
+    "beta": (13.0, 30.0),
+    "low_gamma": (30.0, 45.0),
+    "gamma": (45.0, 70.0),
+    "high_gamma": (70.0, 100.0),
+}
+
+BAND_NAMES = list(EEG_BANDS.keys())
+
+
+def band_mask(freqs: np.ndarray, f_lo: float, f_hi: float) -> np.ndarray:
+    return (freqs >= f_lo) & (freqs < f_hi)
+
+
+def extract_amp_phase(
+    x: np.ndarray,
+    sfreq: float,
+    f_lo: float,
+    f_hi: float,
+    dtype: np.dtype = np.float32,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    x: (..., T) real EEG
+    returns amplitude, phase (rad), freqs_hz for bins in [f_lo, f_hi)
+    """
+    spectrum = np.fft.rfft(x.astype(np.float64, copy=False), axis=-1)
+    freqs = np.fft.rfftfreq(x.shape[-1], d=1.0 / sfreq)
+    mask = band_mask(freqs, f_lo, f_hi)
+    if not np.any(mask):
+        raise ValueError(f"No FFT bins in [{f_lo}, {f_hi}) Hz at sfreq={sfreq}")
+    band = spectrum[..., mask]
+    amp = np.abs(band).astype(dtype)
+    phase = np.angle(band).astype(dtype)
+    return amp, phase, freqs[mask].astype(np.float32)
+
+
+def process_array_chunked(
+    data: np.ndarray,
+    sfreq: float,
+    band_name: str,
+    chunk_size: int,
+    dtype: np.dtype = np.float32,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Process leading axis in chunks to limit peak memory (for large train.npy)."""
+    f_lo, f_hi = EEG_BANDS[band_name]
+    n0 = data.shape[0]
+    amps = []
+    phases = []
+    freqs_hz = None
+    for start in range(0, n0, chunk_size):
+        end = min(start + chunk_size, n0)
+        amp, phase, freqs_hz = extract_amp_phase(
+            data[start:end], sfreq, f_lo, f_hi, dtype=dtype
+        )
+        amps.append(amp)
+        phases.append(phase)
+        print(f"    {band_name}: rows {start}:{end} / {n0}  amp_shape={amp.shape}")
+    return np.concatenate(amps, axis=0), np.concatenate(phases, axis=0), freqs_hz
+
+
+def save_split(
+    split_name: str,
+    data_path: str,
+    out_dir: str,
+    sfreq: float,
+    chunk_size: int,
+    bands: list[str],
+    dtype: np.dtype = np.float32,
+) -> dict:
+    print(f"\n>>> Loading {split_name}: {data_path}")
+    data = np.load(data_path, mmap_mode="r")
+    print(f"  shape={data.shape} dtype={data.dtype}")
+
+    split_out = os.path.join(out_dir, split_name)
+    os.makedirs(split_out, exist_ok=True)
+
+    info = {"split": split_name, "eeg_shape": list(data.shape), "bands": {}}
+
+    for band in bands:
+        print(f"  extracting {band} ...")
+        amp, phase, freqs_hz = process_array_chunked(
+            data, sfreq=sfreq, band_name=band, chunk_size=chunk_size, dtype=dtype
+        )
+        amp_path = os.path.join(split_out, f"{band}_amplitude.npy")
+        phase_path = os.path.join(split_out, f"{band}_phase.npy")
+        freq_path = os.path.join(split_out, f"{band}_freqs_hz.npy")
+        np.save(amp_path, amp)
+        np.save(phase_path, phase)
+        np.save(freq_path, freqs_hz)
+        info["bands"][band] = {
+            "hz": list(EEG_BANDS[band]),
+            "n_bins": int(freqs_hz.shape[0]),
+            "freqs_hz": freqs_hz.tolist(),
+            "amplitude_shape": list(amp.shape),
+            "phase_shape": list(phase.shape),
+            "storage_dtype": str(np.dtype(dtype)),
+            "amplitude_file": os.path.basename(amp_path),
+            "phase_file": os.path.basename(phase_path),
+            "freqs_file": os.path.basename(freq_path),
+        }
+        print(f"    saved {amp_path}  {amp.shape}")
+        print(f"    saved {phase_path}  {phase.shape}")
+
+    return info
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Extract band amplitude & phase from original THINGS-EEG"
+    )
+    parser.add_argument("--sub_id", type=int, default=1)
+    parser.add_argument(
+        "--eeg_dir",
+        default=os.path.join(_REPO_ROOT, "data", "things_eeg", "preprocessed_eeg"),
+        help="original (non band-zeroed) preprocessed EEG root",
+    )
+    parser.add_argument(
+        "--out_dir",
+        default=os.path.join(
+            _REPO_ROOT, "data", "amplitude&phase(orignal)_out"
+        ),
+        help="output root; writes sub-XX/train|test/*.npy here",
+    )
+    parser.add_argument("--sfreq", type=float, default=250.0)
+    parser.add_argument(
+        "--chunk_size",
+        type=int,
+        default=200,
+        help="chunk along first axis (objects) for train memory control",
+    )
+    parser.add_argument(
+        "--bands",
+        nargs="+",
+        default=BAND_NAMES,
+        choices=BAND_NAMES,
+        help="which bands to extract",
+    )
+    parser.add_argument(
+        "--dtype",
+        choices=["float32", "float16"],
+        default="float32",
+        help="storage dtype for amplitude/phase (float16 halves disk use)",
+    )
+    parser.add_argument(
+        "--splits",
+        nargs="+",
+        default=["test", "train"],
+        choices=["train", "test"],
+    )
+    args = parser.parse_args()
+    bands = list(args.bands)
+    storage_dtype = np.float16 if args.dtype == "float16" else np.float32
+
+    sub_name = f"sub-{args.sub_id:02d}"
+    sub_in = os.path.join(args.eeg_dir, sub_name)
+    sub_out = os.path.join(args.out_dir, sub_name)
+    os.makedirs(sub_out, exist_ok=True)
+
+    if not os.path.isdir(sub_in):
+        raise FileNotFoundError(f"Missing subject EEG dir: {sub_in}")
+
+    print(f"subject : {sub_name}")
+    print(f"input   : {sub_in}")
+    print(f"output  : {sub_out}")
+    print(f"sfreq   : {args.sfreq}")
+    print(f"bands   : {bands}")
+    print(f"dtype   : {args.dtype}")
+
+    meta = {
+        "subject": sub_name,
+        "source_eeg_dir": os.path.abspath(sub_in),
+        "note": "Original preprocessed THINGS-EEG (not band-zeroed). Amplitude=|rFFT|, phase=angle(rFFT) per band bins.",
+        "sfreq": args.sfreq,
+        "storage_dtype": args.dtype,
+        "band_definitions_hz": {k: list(v) for k, v in EEG_BANDS.items()},
+        "splits": {},
+    }
+
+    for split in args.splits:
+        npy_path = os.path.join(sub_in, f"{split}.npy")
+        if not os.path.isfile(npy_path):
+            print(f"SKIP missing {npy_path}")
+            continue
+        chunk = args.chunk_size if split == "train" else max(args.chunk_size, 200)
+        meta["splits"][split] = save_split(
+            split,
+            npy_path,
+            sub_out,
+            args.sfreq,
+            chunk_size=chunk,
+            bands=bands,
+            dtype=storage_dtype,
+        )
+
+    meta_path = os.path.join(sub_out, "meta.json")
+    with open(meta_path, "w", encoding="utf-8") as f:
+        json.dump(meta, f, indent=2, ensure_ascii=False)
+    print(f"\nSaved meta: {meta_path}")
+    print("Done.")
+
+
+if __name__ == "__main__":
+    main()

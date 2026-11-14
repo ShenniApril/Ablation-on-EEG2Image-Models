@@ -1,0 +1,35 @@
+"""
+sub-01: replace each EEG band with power-matched Gaussian noise.
+
+Same method as data/gaussian-noise (sub-08 pipeline):
+  - start from already band-zeroed EEG
+  - reconstruct original complex coeffs from saved amplitude & phase
+  - draw Re/Im ~ N(μ, σ) of original S; scale so mean(|N|^2)=mean(|S|^2)
+  - write noise into the zeroed band bins → irFFT
+
+Bands: delta, theta, alpha, beta, low_gamma, gamma, high_gamma
+
+Prereq:
+  python "data/amplitude&phase(orignal)" --sub_id 1
+
+Run from repo root:
+  conda activate neurobridge
+  cd d:\\git\\NeuroBridge
+  python "scripts/gaussian noise"
+  python "scripts/gaussian noise" --bands alpha --splits test
+"""
+
+from __future__ import annotations
+
+import os
+import runpy
+import sys
+
+# Reuse the canonical implementation under data/gaussian-noise
+_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+_TARGET = os.path.join(_REPO_ROOT, "data", "gaussian-noise")
+
+if __name__ == "__main__":
+    # Preserve argv so CLI flags work the same as data/gaussian-noise
+    sys.argv[0] = _TARGET
+    runpy.run_path(_TARGET, run_name="__main__")

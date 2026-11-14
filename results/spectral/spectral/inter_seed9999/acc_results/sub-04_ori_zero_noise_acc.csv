@@ -1,0 +1,16 @@
+condition,band,top1,top5,n,delta_top1,delta_top5
+original,,21.5000,54.5000,200,+0.0000,+0.0000
+zero_delta,delta,4.5000,16.0000,200,-17.0000,-38.5000
+noise_delta,delta,6.5000,24.5000,200,-15.0000,-30.0000
+zero_theta,theta,20.0000,43.5000,200,-1.5000,-11.0000
+noise_theta,theta,17.5000,38.0000,200,-4.0000,-16.5000
+zero_alpha,alpha,14.5000,45.5000,200,-7.0000,-9.0000
+noise_alpha,alpha,15.0000,41.5000,200,-6.5000,-13.0000
+zero_beta,beta,16.0000,45.0000,200,-5.5000,-9.5000
+noise_beta,beta,16.5000,43.5000,200,-5.0000,-11.0000
+zero_low_gamma,low_gamma,21.0000,56.0000,200,-0.5000,+1.5000
+noise_low_gamma,low_gamma,21.0000,55.5000,200,-0.5000,+1.0000
+zero_gamma,gamma,20.5000,55.0000,200,-1.0000,+0.5000
+noise_gamma,gamma,20.5000,55.5000,200,-1.0000,+1.0000
+zero_high_gamma,high_gamma,21.5000,54.5000,200,+0.0000,+0.0000
+noise_high_gamma,high_gamma,21.0000,54.0000,200,-0.5000,-0.5000
